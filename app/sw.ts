@@ -13,18 +13,8 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  navigationPreload: false,
   runtimeCaching: defaultCache,
-  fallbacks: {
-    entries: [
-      {
-        url: "/offline",
-        matcher({ request }) {
-          return request.destination === "document";
-        },
-      },
-    ],
-  },
 });
 
 serwist.addEventListeners();

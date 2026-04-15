@@ -292,16 +292,17 @@ export function ResultsScreen({ stats, onRestart, onNext }: ResultsScreenProps) 
         {/* WPM + ACC + test type */}
         <div className="flex w-full flex-col gap-1 pt-2 md:w-36 md:shrink-0">
           <StatBig label="wpm" value={wpm} />
-          <StatBig label="acc" value={`${accuracy}%`} />
+          <StatBig label="accuracy" value={`${accuracy}%`} />
+          {pb?.isNewPb && (
+            <StatBig label="personal best" value={`${wpm}`} />
+          )}
           {pb?.isNewPb && (
             <span className="text-xs font-medium text-primary animate-in fade-in">
               new personal best
             </span>
           )}
           {pb && !pb.isNewPb && pb.previous && (
-            <span className="text-[10px] text-muted-foreground">
-              pb: {pb.previous.wpm} wpm
-            </span>
+            <StatBig label="personal best" value={pb.previous.wpm} />
           )}
           <div className="mt-4 flex flex-col gap-0.5 text-xs text-muted-foreground">
             <span className="text-[10px] uppercase tracking-widest opacity-50">

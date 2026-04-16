@@ -214,11 +214,7 @@ export function ResultsScreen({ stats, onRestart, onNext }: ResultsScreenProps) 
   const confettiRef = useRef<ConfettiRef>(null)
   const invalid = isInvalidTestResult(stats)
 
-  const pb = useMemo(
-    () => invalid ? null : saveIfPersonalBest(mode, modeDetail, wpm, accuracy),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  )
+  const [pb] = useState(() => invalid ? null : saveIfPersonalBest(mode, modeDetail, wpm, accuracy));
 
   useEffect(() => {
     if (!invalid && wpm >= 100) {

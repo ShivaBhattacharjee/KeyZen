@@ -3,29 +3,18 @@
 import { useEffect, useState } from "react";
 import { useAppChrome } from "@/components/app-chrome";
 import { motion } from "motion/react";
-import {
-  IconAt, IconClock, IconLetterA, IconQuote,
-  IconMountain, IconNumber, IconFeather, IconFlame,
-  IconTool, IconPencil, IconAdjustments, IconX,
-} from "@tabler/icons-react";
+import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, } from "@tabler/icons-react";
 import { CustomTextDialog } from "@/components/custom-text-dialog";
 import type { QuoteLength } from "@/lib/quotes";
 import type { Difficulty } from "@/lib/words";
 import { cn } from "@/lib/utils";
-import {
-  Tabs, TabsList, TabsTrigger,
-} from "@/components/animate-ui/components/animate/tabs";
+import { Tabs, TabsList, TabsTrigger, } from "@/components/animate-ui/components/animate/tabs";
 import type { TestMode, TimeOption, WordOption } from "@/lib/test-storage";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTitle, } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogTitle, } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover";
+
+export type CodeManifest = Record<string, { code: string; name: string; chapters: string[] }>;
 
 export interface TestControlsProps {
   mode: TestMode;
@@ -36,6 +25,9 @@ export interface TestControlsProps {
   numbers: boolean;
   difficulty: Difficulty | undefined;
   customText: string;
+  codeLanguage: string;
+  codeChapter: string;
+  codeManifest: CodeManifest;
   controlsVisible: boolean;
   onModeChange: (next: TestMode) => void;
   onTimeOptionChange: (next: TimeOption) => void;
@@ -45,15 +37,19 @@ export interface TestControlsProps {
   onNumbersToggle: () => void;
   onDifficultyToggle: (d: Difficulty) => void;
   onCustomTextChange: (next: string) => void;
+  onCodeLanguageChange: (lang: string) => void;
+  onCodeChapterChange: (chapter: string) => void;
   onRestart: () => void;
 }
 
 export function TestControls({
   mode, timeOption, wordOption, quoteLength,
   punctuation, numbers, difficulty, customText,
+  codeLanguage, codeChapter, codeManifest,
   controlsVisible,
   onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
-  onPunctuationToggle, onNumbersToggle, onDifficultyToggle, onCustomTextChange, onRestart,
+  onPunctuationToggle, onNumbersToggle, onDifficultyToggle, onCustomTextChange,
+  onCodeLanguageChange, onCodeChapterChange, onRestart,
 }: TestControlsProps) {
   const [drawerOpen, setDrawerOpenState] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -81,6 +77,63 @@ export function TestControls({
     active
       ? "border-primary/40 bg-primary/10 text-primary"
       : "border-border bg-zinc-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground hover:border-border/80",
+  );
+
+  const selectClass = "appearance-none bg-zinc-100 dark:bg-zinc-800 text-xs font-medium px-3 py-1.5 rounded-lg border-r-8 border-transparent outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 cursor-pointer";
+
+  const codeSelectTriggerClass = "data-[state=active]:text-primary text-muted-foreground inline-flex h-full items-center justify-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-500 ease-in-out hover:text-foreground disabled:pointer-events-none disabled:opacity-50 cursor-pointer border-0 outline-none focus-visible:outline-none";
+
+  const renderDropdownOptionClass = (active: boolean) => cn(
+    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer w-full text-left",
+    active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+  );
+
+  const codeSelectors = (
+    <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px]">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className={codeSelectTriggerClass} data-state={codeLanguage ? "active" : "inactive"}>
+            {codeLanguage && codeManifest[codeLanguage] ? codeManifest[codeLanguage].name : "Language"}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm" align="center" sideOffset={8}>
+          {Object.values(codeManifest).map(lang => (
+            <button
+              type="button"
+              key={lang.code}
+              onClick={() => onCodeLanguageChange(lang.code)}
+              className={renderDropdownOptionClass(codeLanguage === lang.code)}
+            >
+              {lang.name}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <button 
+            className={codeSelectTriggerClass} 
+            data-state={codeChapter ? "active" : "inactive"}
+            disabled={!codeLanguage || !codeManifest[codeLanguage]}
+          >
+            {codeChapter ? codeChapter.replace(/_/g, " ") : "Chapter"}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm max-h-[300px] overflow-y-auto overflow-x-hidden" align="center" sideOffset={8} style={{ scrollbarWidth: "none" }}>
+          {codeLanguage && codeManifest[codeLanguage]?.chapters.map(chap => (
+            <button
+              type="button"
+              key={chap}
+              onClick={() => onCodeChapterChange(chap)}
+              className={renderDropdownOptionClass(codeChapter === chap)}
+            >
+              {chap.replace(/_/g, " ")}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 
   const settingsContent = (
@@ -128,6 +181,7 @@ export function TestControls({
             { value: "words",  icon: IconLetterA,  label: "words"  },
             { value: "quote",  icon: IconQuote,    label: "quote"  },
             { value: "zen",    icon: IconMountain, label: "zen"    },
+            { value: "code",   icon: IconCode,     label: "code"   },
             { value: "custom", icon: IconTool,     label: "custom" },
           ] as const).map(({ value, icon: Icon, label }) => (
             <button
@@ -150,7 +204,7 @@ export function TestControls({
           {/* Options group */}
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {mode === "words" ? "Word Count" : mode === "quote" ? "Quote Length" : mode === "custom" ? "Custom Text" : "Time (s)"}
+              {mode === "words" ? "Word Count" : mode === "quote" ? "Quote Length" : mode === "custom" ? "Custom Text" : mode === "code" ? "Language / Chapter" : "Time (s)"}
             </span>
             {mode === "words" ? (
               <div className="grid grid-cols-4 gap-2">
@@ -192,6 +246,30 @@ export function TestControls({
                   </button>
                 }
               />
+            ) : mode === "code" ? (
+              <div className="flex flex-col gap-2">
+                <select
+                  value={codeLanguage}
+                  onChange={(e) => onCodeLanguageChange(e.target.value)}
+                  className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  <option value="" disabled hidden>Select language</option>
+                  {Object.values(codeManifest).map(lang => (
+                    <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={codeChapter}
+                  onChange={(e) => onCodeChapterChange(e.target.value)}
+                  disabled={!codeLanguage || !codeManifest[codeLanguage]}
+                  className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 cursor-pointer"
+                >
+                  <option value="" disabled hidden>Select chapter</option>
+                  {codeLanguage && codeManifest[codeLanguage]?.chapters.map(chap => (
+                    <option key={chap} value={chap}>{chap.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+              </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {[15, 30, 60, 120].map((t) => (
@@ -223,9 +301,9 @@ export function TestControls({
         )}
       >
         {/* Desktop / large screen controls */}
-        <div className="hidden lg:flex flex-wrap items-center justify-center gap-2 mt-6">
+        <div className="hidden lg:flex items-center justify-center gap-2 mt-6 whitespace-nowrap">
           {/* Toggles: punctuation / numbers / difficulty */}
-          <div className="flex flex-row flex-wrap items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
+          <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
             <button type="button" onClick={onPunctuationToggle} className={btnClass(punctuation)}>
               <IconAt size={14} />
               punctuation
@@ -234,7 +312,7 @@ export function TestControls({
               <IconNumber size={14} />
               numbers
             </button>
-            <div className="h-4 w-px bg-border" />
+            <div className="h-4 w-px shrink-0 bg-border" />
             <button type="button" onClick={() => onDifficultyToggle("easy")} className={btnClass(difficulty === "easy")}>
               <IconFeather size={14} />
               easy
@@ -245,7 +323,7 @@ export function TestControls({
             </button>
           </div>
 
-          <div className="hidden h-4 w-px bg-border sm:block" />
+          <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
 
           {/* Mode tabs */}
           <Tabs value={mode} onValueChange={(v) => onModeChange(v as TestMode)} className="flex items-center">
@@ -255,6 +333,7 @@ export function TestControls({
                 { value: "words",  icon: IconLetterA,  label: "words"  },
                 { value: "quote",  icon: IconQuote,    label: "quote"  },
                 { value: "zen",    icon: IconMountain, label: "zen"    },
+                { value: "code",   icon: IconCode,     label: "code"   },
                 { value: "custom", icon: IconTool,     label: "custom" },
               ] as const).map(({ value, icon: Icon, label }) => (
                 <TabsTrigger key={value} value={value} className="gap-1.5 px-3 text-xs cursor-pointer">
@@ -267,7 +346,7 @@ export function TestControls({
 
           {mode !== "zen" && (
             <>
-              <div className="hidden h-4 w-px bg-border sm:block" />
+              <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
 
               {mode === "words" ? (
                 <Tabs value={String(wordOption)} onValueChange={(v) => onWordOptionChange(Number(v) as WordOption)} className="flex items-center">
@@ -301,6 +380,8 @@ export function TestControls({
                     }
                   />
                 </div>
+              ) : mode === "code" ? (
+                codeSelectors
               ) : (
                 <Tabs value={String(timeOption)} onValueChange={(v) => onTimeOptionChange(Number(v) as TimeOption)} className="flex items-center">
                   <TabsList>
@@ -311,7 +392,7 @@ export function TestControls({
                 </Tabs>
               )}
 
-              <div className="hidden h-4 w-px bg-border sm:block" />
+              <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
             </>
           )}
         </div>

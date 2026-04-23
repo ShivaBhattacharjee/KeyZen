@@ -1,14 +1,16 @@
 "use client"
 
 import { AnimatePresence, motion, LayoutGroup } from "motion/react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useRef, useState, useEffect } from "react"
 import { IconLock, IconPointer, IconRefresh } from "@tabler/icons-react"
 import { ResultsScreen } from "@/components/results-screen"
-import { TestControls } from "@/components/test-controls"
+import { TestControls, type CodeManifest } from "@/components/test-controls"
 import { WordItem } from "@/components/word-item"
 import { useTypingTest } from "@/hooks/use-typing-test"
 import { useSettings } from "@/components/settings-context"
 import { cn } from "@/lib/utils"
+import { useShikiTokens } from "@/hooks/use-shiki"
+import { useTheme } from "next-themes"
 
 interface TypingTestProps {
   onKeyHighlight?: (key: string | null) => void
@@ -19,17 +21,18 @@ interface TypingTestProps {
 }
 
 export function TypingTest(props: TypingTestProps) {
-  const { realtimeWpm, faahMode, ghostMode, shakeMode, fontSize } =
-    useSettings()
-  const fontSizeRem = {
-    xs: "1rem",
-    sm: "1.25rem",
-    md: "1.5rem",
-    lg: "1.875rem",
-    xl: "2.25rem",
-  }[fontSize]
+  const { realtimeWpm, faahMode, ghostMode, shakeMode, fontSize, syntaxHighlighting } = useSettings()
+  const { resolvedTheme } = useTheme()
+  const fontSizeRem = { xs: "1rem", sm: "1.25rem", md: "1.5rem", lg: "1.875rem", xl: "2.25rem" }[fontSize]
   const faahAudioRef = useRef<HTMLAudioElement | null>(null)
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [codeManifest, setCodeManifest] = useState<CodeManifest>({})
+
+  useEffect(() => {
+    fetch("/api/code").then(r => r.json()).then(data => {
+      setCodeManifest(data);
+    }).catch(() => {})
+  }, [])
 
   const onWrongKey = useCallback(() => {
     if (faahMode) {
@@ -61,6 +64,8 @@ export function TypingTest(props: TypingTestProps) {
     numbers,
     difficulty,
     customText,
+    codeLanguage,
+    codeChapter,
     words,
     typed,
     wordIndex,
@@ -97,8 +102,17 @@ export function TypingTest(props: TypingTestProps) {
     onNumbersToggle,
     onDifficultyToggle,
     onCustomTextChange,
+    onCodeLanguageChange,
+    onCodeChapterChange,
     onRestart,
   } = useTypingTest({ ...props, onWrongKey })
+
+  const shikiColors = useShikiTokens(
+    words,
+    codeLanguage,
+    mode === "code" && syntaxHighlighting,
+    resolvedTheme ?? "dark",
+  )
 
   if (showResults) {
     return (
@@ -128,29 +142,35 @@ export function TypingTest(props: TypingTestProps) {
       onClick={handleFocus}
       onMouseMove={handleMouseMove}
     >
+      {/* Controls toolbar */}
+      <TestControls
+        mode={mode}
+        timeOption={timeOption}
+        wordOption={wordOption}
+        quoteLength={quoteLength}
+        punctuation={punctuation}
+        numbers={numbers}
+        difficulty={difficulty}
+        customText={customText}
+        codeLanguage={codeLanguage}
+        codeChapter={codeChapter}
+        codeManifest={codeManifest}
+        controlsVisible={controlsVisible}
+        onModeChange={onModeChange}
+        onTimeOptionChange={onTimeOptionChange}
+        onWordOptionChange={onWordOptionChange}
+        onQuoteLengthChange={onQuoteLengthChange}
+        onPunctuationToggle={onPunctuationToggle}
+        onNumbersToggle={onNumbersToggle}
+        onDifficultyToggle={onDifficultyToggle}
+        onCustomTextChange={onCustomTextChange}
+        onCodeLanguageChange={onCodeLanguageChange}
+        onCodeChapterChange={onCodeChapterChange}
+        onRestart={onRestart}
+      />
+
       {/* Words display */}
       <div className="relative w-full">
-        {/* Controls toolbar */}
-        <TestControls
-          mode={mode}
-          timeOption={timeOption}
-          wordOption={wordOption}
-          quoteLength={quoteLength}
-          punctuation={punctuation}
-          numbers={numbers}
-          difficulty={difficulty}
-          customText={customText}
-          controlsVisible={controlsVisible}
-          onModeChange={onModeChange}
-          onTimeOptionChange={onTimeOptionChange}
-          onWordOptionChange={onWordOptionChange}
-          onQuoteLengthChange={onQuoteLengthChange}
-          onPunctuationToggle={onPunctuationToggle}
-          onNumbersToggle={onNumbersToggle}
-          onDifficultyToggle={onDifficultyToggle}
-          onCustomTextChange={onCustomTextChange}
-          onRestart={onRestart}
-        />
         {/* Caps Lock indicator */}
         <div className="pointer-events-none absolute top-3 right-0 left-0 z-30 flex items-center justify-center">
           <AnimatePresence>
@@ -170,14 +190,9 @@ export function TypingTest(props: TypingTestProps) {
           </AnimatePresence>
         </div>
 
-        {/* Timer / progress — reserves space on desktop; fully collapses on mobile when not started */}
+        {/* Timer / progress — always reserves space */}
         <motion.div
-          className={cn(
-            "flex items-center gap-5 md:mb-3 md:min-h-8",
-            started
-              ? "mb-3 min-h-8"
-              : "mb-0 h-0 min-h-0 overflow-hidden md:h-auto"
-          )}
+          className="mb-3 flex min-h-8 items-center gap-5"
           animate={{ opacity: resetting ? 0 : 1 }}
           transition={{ duration: 0.15 }}
         >
@@ -290,6 +305,7 @@ export function TypingTest(props: TypingTestProps) {
                     elemRef={isActive ? activeWordRef : undefined}
                     dimmed={dimmed}
                     isRTL={isRTL}
+                    tokenColors={mode === "code" && syntaxHighlighting ? shikiColors[wIdx] : undefined}
                   />
                 )
               })}
@@ -320,13 +336,13 @@ export function TypingTest(props: TypingTestProps) {
       {/* Restart button */}
       <RestartButton controlsVisible={controlsVisible} onRestart={onRestart} />
 
-      {/* Keyboard shortcuts hint — hidden on mobile (no tab/shift keys) */}
+      {/* Keyboard shortcuts hint */}
       <motion.div
         animate={{
           opacity: mode === "zen" && started ? 1 : controlsVisible ? 1 : 0,
         }}
         transition={{ duration: 0.4 }}
-        className="hidden items-center gap-4 text-xs text-muted-foreground md:flex"
+        className="flex items-center gap-4 text-xs text-muted-foreground"
       >
         {mode === "zen" && started ? (
           <span>

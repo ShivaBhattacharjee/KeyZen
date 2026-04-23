@@ -17,6 +17,8 @@ export interface WordItemProps {
   dimmed?: boolean;
   /** When true, render cursor on the right side (RTL languages). */
   isRTL?: boolean;
+  /** Per-character syntax highlight colors (hex) for un-typed chars (code mode). */
+  tokenColors?: (string | undefined)[];
 }
 
 export const WordItem = memo(function WordItem({
@@ -28,6 +30,7 @@ export const WordItem = memo(function WordItem({
   elemRef,
   dimmed = false,
   isRTL = false,
+  tokenColors,
 }: WordItemProps) {
   const cursorAtEnd = isActive && displayInput.length >= word.length;
 
@@ -41,10 +44,17 @@ export const WordItem = memo(function WordItem({
       style={dimmed ? { opacity: 0.05 } : undefined}
     >
       {word.split("").map((char, cIdx) => {
-        let color = "text-muted-foreground/40";
+        const tokenHex = tokenColors?.[cIdx];
+        const defaultColor = tokenHex ? undefined : "text-muted-foreground/40";
+        let color = defaultColor;
+        let inlineColor = tokenHex;
         if (isPast || isActive) {
           if (cIdx < displayInput.length) {
             color = displayInput[cIdx] === char ? "text-foreground" : "text-destructive";
+            inlineColor = undefined;
+          } else {
+            color = defaultColor;
+            inlineColor = tokenHex;
           }
         }
         const isLastChar = cIdx === word.length - 1;
@@ -73,7 +83,10 @@ export const WordItem = memo(function WordItem({
                 transition={{ type: "spring", stiffness: 700, damping: 38, mass: 0.6 }}
               />
             )}
-            <span className={cn("transition-colors duration-60", color)}>
+            <span
+              className={cn("transition-colors duration-60", color)}
+              style={inlineColor ? { color: inlineColor } : undefined}
+            >
               {char}
             </span>
           </span>

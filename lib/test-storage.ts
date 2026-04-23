@@ -1,7 +1,7 @@
 import type { QuoteLength } from "@/lib/quotes"
 import type { Difficulty } from "@/lib/words"
 
-export type TestMode = "time" | "words" | "quote" | "zen" | "custom"
+export type TestMode = "time" | "words" | "quote" | "zen" | "code" | "custom"
 export type TimeOption = 15 | 30 | 60 | 120
 export type WordOption = 10 | 25 | 50 | 100
 
@@ -13,17 +13,13 @@ export const PUNCTUATION_STORAGE_KEY = "tc-punctuation"
 export const NUMBERS_STORAGE_KEY = "tc-numbers"
 export const DIFFICULTY_STORAGE_KEY = "tc-difficulty"
 export const CUSTOM_TEXT_STORAGE_KEY = "tc-custom-text"
+export const CODE_LANGUAGE_STORAGE_KEY = "tc-code-language"
+export const CODE_CHAPTER_STORAGE_KEY = "tc-code-chapter"
 
 export const DEFAULT_CUSTOM_TEXT =
   "Never gonna give you up, never gonna let you down Never gonna run around and desert you Never gonna make you cry, never gonna say goodbye Never gonna tell a lie and hurt you"
 
-const VALID_TEST_MODES: readonly TestMode[] = [
-  "time",
-  "words",
-  "quote",
-  "zen",
-  "custom",
-]
+const VALID_TEST_MODES: readonly TestMode[] = [ "time", "words", "quote", "zen", "custom", "code", ]
 const VALID_TIME_OPTIONS: readonly TimeOption[] = [15, 30, 60, 120]
 const VALID_WORD_OPTIONS: readonly WordOption[] = [10, 25, 50, 100]
 const VALID_QUOTE_LENGTHS: readonly QuoteLength[] = ["short", "medium", "long"]
@@ -93,4 +89,14 @@ export function readStoredDifficulty(): Difficulty | undefined {
   if (!raw || !(VALID_DIFFICULTIES as readonly string[]).includes(raw))
     return undefined
   return raw as Difficulty
+}
+
+export function readStoredCodeLanguage(): string | undefined {
+  if (!isBrowser()) return undefined
+  return localStorage.getItem(CODE_LANGUAGE_STORAGE_KEY) || undefined
+}
+
+export function readStoredCodeChapter(): string | undefined {
+  if (!isBrowser()) return undefined
+  return localStorage.getItem(CODE_CHAPTER_STORAGE_KEY) || undefined
 }

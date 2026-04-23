@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toBlob, toPng } from "html-to-image"
 import { IconCamera, IconCopy, IconDownload } from "@tabler/icons-react"
 
@@ -20,13 +20,7 @@ function IconX({ size = 16 }: { size?: number }) {
   )
 }
 import { toast } from "sonner"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
 import { CornerBrackets } from "@/components/corner-brackets"
 
 interface ShareableStats {
@@ -296,7 +290,7 @@ function ScaledCardPreview({ children }: { children: React.ReactNode }) {
   const [scale, setScale] = useState(1)
   const [innerHeight, setInnerHeight] = useState(0)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const measure = () => {
       const w = wrapperRef.current?.getBoundingClientRect().width ?? 0
 
@@ -304,7 +298,7 @@ function ScaledCardPreview({ children }: { children: React.ReactNode }) {
       if (h > 0) setInnerHeight(h)
       if (w > 0 && h > 0) {
         const maxPreviewHeight = Math.max(200, window.innerHeight * 0.55)
-        const scaleByWidth = w / CARD_WIDTH
+        const scaleByWidth = w < CARD_WIDTH ? w / CARD_WIDTH : 1
         const scaleByHeight = h > maxPreviewHeight ? maxPreviewHeight / h : 1
         setScale(Math.min(scaleByWidth, scaleByHeight, 1))
       }

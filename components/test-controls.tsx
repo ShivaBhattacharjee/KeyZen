@@ -14,7 +14,7 @@ import { Drawer, DrawerContent, DrawerTitle, } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogTitle, } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover";
 
-export type CodeManifest = Record<string, { code: string; name: string; chapters: string[] }>;
+export type CodeManifest = Record<string, { code: string; name: string; ext: string; chapters: string[] }>;
 
 export interface TestControlsProps {
   mode: TestMode;
@@ -27,6 +27,7 @@ export interface TestControlsProps {
   customText: string;
   codeLanguage: string;
   codeChapter: string;
+  codeExt: string;
   codeManifest: CodeManifest;
   controlsVisible: boolean;
   onModeChange: (next: TestMode) => void;
@@ -37,7 +38,7 @@ export interface TestControlsProps {
   onNumbersToggle: () => void;
   onDifficultyToggle: (d: Difficulty) => void;
   onCustomTextChange: (next: string) => void;
-  onCodeLanguageChange: (lang: string) => void;
+  onCodeLanguageChange: (lang: string, ext: string) => void;
   onCodeChapterChange: (chapter: string) => void;
   onRestart: () => void;
 }
@@ -45,7 +46,7 @@ export interface TestControlsProps {
 export function TestControls({
   mode, timeOption, wordOption, quoteLength,
   punctuation, numbers, difficulty, customText,
-  codeLanguage, codeChapter, codeManifest,
+  codeLanguage, codeChapter, codeExt, codeManifest,
   controlsVisible,
   onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
   onPunctuationToggle, onNumbersToggle, onDifficultyToggle, onCustomTextChange,
@@ -101,7 +102,7 @@ export function TestControls({
             <button
               type="button"
               key={lang.code}
-              onClick={() => onCodeLanguageChange(lang.code)}
+              onClick={() => onCodeLanguageChange(lang.code, lang.ext)}
               className={renderDropdownOptionClass(codeLanguage === lang.code)}
             >
               {lang.name}
@@ -250,7 +251,10 @@ export function TestControls({
               <div className="flex flex-col gap-2">
                 <select
                   value={codeLanguage}
-                  onChange={(e) => onCodeLanguageChange(e.target.value)}
+                  onChange={(e) => {
+                    const lang = codeManifest[e.target.value];
+                    if (lang) onCodeLanguageChange(lang.code, lang.ext);
+                  }}
                   className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                 >
                   <option value="" disabled hidden>Select language</option>

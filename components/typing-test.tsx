@@ -29,7 +29,7 @@ export function TypingTest(props: TypingTestProps) {
   const [codeManifest, setCodeManifest] = useState<CodeManifest>({})
 
   useEffect(() => {
-    fetch("/api/code").then(r => r.json()).then(data => {
+    fetch("/code/_manifest.json").then(r => r.json()).then(data => {
       setCodeManifest(data);
     }).catch(() => {})
   }, [])
@@ -66,6 +66,8 @@ export function TypingTest(props: TypingTestProps) {
     customText,
     codeLanguage,
     codeChapter,
+    codeExt,
+    codeLoading,
     words,
     typed,
     wordIndex,
@@ -105,7 +107,7 @@ export function TypingTest(props: TypingTestProps) {
     onCodeLanguageChange,
     onCodeChapterChange,
     onRestart,
-  } = useTypingTest({ ...props, onWrongKey })
+  } = useTypingTest({ ...props, onWrongKey, codeManifest })
 
   const shikiColors = useShikiTokens(
     words,
@@ -154,6 +156,7 @@ export function TypingTest(props: TypingTestProps) {
         customText={customText}
         codeLanguage={codeLanguage}
         codeChapter={codeChapter}
+        codeExt={codeExt}
         codeManifest={codeManifest}
         controlsVisible={controlsVisible}
         onModeChange={onModeChange}
@@ -232,6 +235,18 @@ export function TypingTest(props: TypingTestProps) {
             </div>
           </div>
         </motion.div>
+
+        {codeLoading && (
+          <div className="flex items-center justify-center h-8">
+            <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-primary"
+                animate={{ width: ["0%", "100%"] }}
+                transition={{ duration: 0.8, ease: "linear" }}
+              />
+            </div>
+          </div>
+        )}
 
         <div
           ref={wordsContainerRef}

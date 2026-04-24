@@ -59,18 +59,18 @@ export function useShikiTokens(
       const shikiLang = LANG_MAP[lang] ?? "text";
       const shikiTheme = theme === "dark" ? "vitesse-dark" : "vitesse-light";
 
-      const { tokens } = h.codeToTokens(code, { lang: shikiLang, theme: shikiTheme });
+      const codeWithNewlines = words.join("\n");
+      const { tokens } = h.codeToTokens(codeWithNewlines, { lang: shikiLang, theme: shikiTheme });
 
       const charColors: (string | undefined)[] = [];
       for (const line of tokens) {
         for (const token of line) {
           for (const char of token.content) {
-            charColors.push(char === " " ? undefined : token.color);
+            charColors.push(char === "\n" ? undefined : token.color);
           }
         }
       }
 
-      // Map back to per-word arrays
       let pos = 0;
       const result: (string | undefined)[][] = [];
       for (const word of words) {
@@ -80,7 +80,7 @@ export function useShikiTokens(
           pos++;
         }
         result.push(colors);
-        pos++; // skip the space separator
+        if (pos < charColors.length && charColors[pos] === undefined) pos++;
       }
 
       if (!cancelled) setColorMap(result);

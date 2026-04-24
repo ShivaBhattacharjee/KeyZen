@@ -1,4 +1,3 @@
-// Topic: Collections and Iteration
 void main() {
   final scores = <String, int>{
     'alice': 92,

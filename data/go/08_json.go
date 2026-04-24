@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: JSON and Structs
 type Config struct {
     Port    int      `json:"port"`
     Debug   bool     `json:"debug"`

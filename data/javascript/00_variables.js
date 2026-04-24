@@ -1,4 +1,3 @@
-// Topic: Variables and Functions
 const appName = "KeyZen";
 let userScore = 0;
 

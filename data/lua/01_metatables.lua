@@ -1,4 +1,3 @@
--- Topic: Metatables and OOP
 local Animal = {}
 Animal.__index = Animal
 

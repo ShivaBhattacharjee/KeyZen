@@ -9,7 +9,8 @@ import { WordItem } from "@/components/word-item"
 import { useTypingTest } from "@/hooks/use-typing-test"
 import { useSettings } from "@/components/settings-context"
 import { cn } from "@/lib/utils"
-import { useShikiTokens } from "@/hooks/use-shiki"
+import { useShikiTokens } from "@/hooks/use-shiki";
+import { CODE_MANIFEST } from "@/lib/code";
 import { useTheme } from "next-themes"
 
 interface TypingTestProps {
@@ -26,13 +27,7 @@ export function TypingTest(props: TypingTestProps) {
   const fontSizeRem = { xs: "1rem", sm: "1.25rem", md: "1.5rem", lg: "1.875rem", xl: "2.25rem" }[fontSize]
   const faahAudioRef = useRef<HTMLAudioElement | null>(null)
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [codeManifest, setCodeManifest] = useState<CodeManifest>({})
-
-  useEffect(() => {
-    fetch("/code/_manifest.json").then(r => r.json()).then(data => {
-      setCodeManifest(data);
-    }).catch(() => {})
-  }, [])
+  const [codeManifest] = useState<CodeManifest>(() => CODE_MANIFEST);
 
   const onWrongKey = useCallback(() => {
     if (faahMode) {
@@ -66,7 +61,6 @@ export function TypingTest(props: TypingTestProps) {
     customText,
     codeLanguage,
     codeChapter,
-    codeExt,
     codeLoading,
     words,
     typed,
@@ -107,7 +101,7 @@ export function TypingTest(props: TypingTestProps) {
     onCodeLanguageChange,
     onCodeChapterChange,
     onRestart,
-  } = useTypingTest({ ...props, onWrongKey, codeManifest })
+  } = useTypingTest({ ...props, onWrongKey })
 
   const shikiColors = useShikiTokens(
     words,
@@ -156,7 +150,6 @@ export function TypingTest(props: TypingTestProps) {
         customText={customText}
         codeLanguage={codeLanguage}
         codeChapter={codeChapter}
-        codeExt={codeExt}
         codeManifest={codeManifest}
         controlsVisible={controlsVisible}
         onModeChange={onModeChange}

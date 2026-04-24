@@ -1,4 +1,3 @@
-// Topic: Async/Await and Fetch
 async function fetchUser(id) {
     const res = await fetch(`/api/users/${id}`);
     if (!res.ok) {

@@ -1,4 +1,3 @@
--- Topic: String and File I/O
 local function readLines(path)
     local lines = {}
     local file = io.open(path, "r")

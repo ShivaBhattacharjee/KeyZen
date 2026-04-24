@@ -1,4 +1,3 @@
-// Topic: Array Methods
 const items = [
     { name: "Keyboard", price: 75, inStock: true },
     { name: "Mouse", price: 25, inStock: false },

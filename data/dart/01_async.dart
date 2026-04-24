@@ -1,4 +1,3 @@
-// Topic: Async and Futures
 import 'dart:async';
 
 Future<String> fetchData(String url) async {

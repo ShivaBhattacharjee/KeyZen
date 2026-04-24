@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Closures and Defer
 func withRetry(n int, fn func() error) error {
     var last error
     for i := 0; i < n; i++ {

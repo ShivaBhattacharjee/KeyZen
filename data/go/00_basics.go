@@ -1,4 +1,3 @@
-/// Topic: Variables and Types
 name := "KeyZen"
 version := 1.0
 active := true

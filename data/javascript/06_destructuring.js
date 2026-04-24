@@ -1,4 +1,3 @@
-// Topic: Destructuring and Spread
 const config = {
     host: "localhost",
     port: 3000,

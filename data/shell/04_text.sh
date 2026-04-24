@@ -1,4 +1,3 @@
-# Topic: Text Processing
 grep -rn "TODO" --include="*.go" . | while read -r match; do
     file=$(echo "$match" | cut -d: -f1)
     line=$(echo "$match" | cut -d: -f2)

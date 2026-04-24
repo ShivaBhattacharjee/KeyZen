@@ -1,4 +1,3 @@
-// Topic: Classes and Inheritance
 class Animal {
     constructor(name) {
         this.name = name;

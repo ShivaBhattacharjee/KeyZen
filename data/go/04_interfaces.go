@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Interfaces
 type Writer interface {
     Write(data []byte) (int, error)
     Close() error

@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: HTTP Handler
 func userHandler(w http.ResponseWriter, r *http.Request) {
     id := r.URL.Query().Get("id")
     if id == "" {

@@ -1,4 +1,3 @@
-// Topic: Arrow Functions and Closures
 const greet = (name) => `Hello, ${name}!`;
 
 const multiply = (a, b) => a * b;

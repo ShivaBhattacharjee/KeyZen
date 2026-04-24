@@ -1,4 +1,3 @@
-// Topic: Error Handling
 async function fetchJSON(url) {
     try {
         const res = await fetch(url);

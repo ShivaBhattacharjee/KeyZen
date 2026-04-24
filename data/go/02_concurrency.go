@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Channels and Select
 ch := make(chan string, 1)
 timeout := time.After(2 * time.Second)
 

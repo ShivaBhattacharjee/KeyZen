@@ -1,4 +1,3 @@
-// Topic: Classes and Null Safety
 class User {
   final String name;
   final int age;

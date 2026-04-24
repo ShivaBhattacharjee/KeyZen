@@ -27,7 +27,6 @@ export interface TestControlsProps {
   customText: string;
   codeLanguage: string;
   codeChapter: string;
-  codeExt: string;
   codeManifest: CodeManifest;
   controlsVisible: boolean;
   onModeChange: (next: TestMode) => void;
@@ -38,7 +37,7 @@ export interface TestControlsProps {
   onNumbersToggle: () => void;
   onDifficultyToggle: (d: Difficulty) => void;
   onCustomTextChange: (next: string) => void;
-  onCodeLanguageChange: (lang: string, ext: string) => void;
+  onCodeLanguageChange: (lang: string) => void;
   onCodeChapterChange: (chapter: string) => void;
   onRestart: () => void;
 }
@@ -46,7 +45,7 @@ export interface TestControlsProps {
 export function TestControls({
   mode, timeOption, wordOption, quoteLength,
   punctuation, numbers, difficulty, customText,
-  codeLanguage, codeChapter, codeExt, codeManifest,
+  codeLanguage, codeChapter, codeManifest,
   controlsVisible,
   onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
   onPunctuationToggle, onNumbersToggle, onDifficultyToggle, onCustomTextChange,
@@ -102,7 +101,7 @@ export function TestControls({
             <button
               type="button"
               key={lang.code}
-              onClick={() => onCodeLanguageChange(lang.code, lang.ext)}
+              onClick={() => onCodeLanguageChange(lang.code)}
               className={renderDropdownOptionClass(codeLanguage === lang.code)}
             >
               {lang.name}
@@ -253,7 +252,7 @@ export function TestControls({
                   value={codeLanguage}
                   onChange={(e) => {
                     const lang = codeManifest[e.target.value];
-                    if (lang) onCodeLanguageChange(lang.code, lang.ext);
+                    if (lang) onCodeLanguageChange(lang.code);
                   }}
                   className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                 >

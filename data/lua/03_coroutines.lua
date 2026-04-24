@@ -1,4 +1,3 @@
--- Topic: Coroutines
 local function producer()
     return coroutine.wrap(function()
         for i = 1, 5 do

@@ -1,4 +1,3 @@
-# Topic: Script Boilerplate
 #!/bin/bash
 set -euo pipefail
 

@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Struct Methods
 type Server struct {
     host string
     port int

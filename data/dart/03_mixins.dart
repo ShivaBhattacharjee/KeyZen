@@ -1,4 +1,3 @@
-// Topic: Mixins
 mixin Printable on Object {
     void prettyPrint() {
         print(toString());

@@ -1,4 +1,3 @@
-// Topic: DOM and Events
 const form = document.querySelector('#login-form');
 const input = document.getElementById('username');
 const msg = document.querySelector('.status');

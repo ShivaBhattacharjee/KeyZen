@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Error Wrapping
 func readConfig(path string) ([]byte, error) {
     data, err := os.ReadFile(path)
     if err != nil {

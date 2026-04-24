@@ -8,8 +8,8 @@ import { fetchLanguageWords, isRTLLanguage, stripArabicDiacritics } from "@/lib/
 import { useSettings } from "@/components/settings-context";
 import { accuracyFromCounts, countWpm, wpmNumeratorFromCounts, } from "@/lib/wpm-count";
 import type { ResultStats, WpmSnapshot } from "@/components/results-screen";
-import type { CodeManifest } from "@/components/test-controls";
-import { type TestMode, type TimeOption, type WordOption, TEST_MODE_STORAGE_KEY, TIME_OPTION_STORAGE_KEY, WORD_OPTION_STORAGE_KEY, QUOTE_LENGTH_STORAGE_KEY, PUNCTUATION_STORAGE_KEY, NUMBERS_STORAGE_KEY, DIFFICULTY_STORAGE_KEY, CUSTOM_TEXT_STORAGE_KEY, DEFAULT_CUSTOM_TEXT, CODE_LANGUAGE_STORAGE_KEY, CODE_CHAPTER_STORAGE_KEY, CODE_EXT_STORAGE_KEY, readStoredTestMode, readStoredTimeOption, readStoredWordOption, readStoredQuoteLength, readStoredBool, readStoredDifficulty, readStoredCustomText, readStoredCodeLanguage, readStoredCodeChapter, readStoredCodeExt, } from "@/lib/test-storage";
+import { CODE_MANIFEST, getCodeContent } from "@/lib/code";
+import { type TestMode, type TimeOption, type WordOption, TEST_MODE_STORAGE_KEY, TIME_OPTION_STORAGE_KEY, WORD_OPTION_STORAGE_KEY, QUOTE_LENGTH_STORAGE_KEY, PUNCTUATION_STORAGE_KEY, NUMBERS_STORAGE_KEY, DIFFICULTY_STORAGE_KEY, CUSTOM_TEXT_STORAGE_KEY, DEFAULT_CUSTOM_TEXT, CODE_LANGUAGE_STORAGE_KEY, CODE_CHAPTER_STORAGE_KEY, readStoredTestMode, readStoredTimeOption, readStoredWordOption, readStoredQuoteLength, readStoredBool, readStoredDifficulty, readStoredCustomText, readStoredCodeLanguage, readStoredCodeChapter, } from "@/lib/test-storage";
 
 function customTextToWords(text: string): string[] {
   return text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
@@ -23,7 +23,7 @@ type ResetOverrides = Partial<{
   timeOption: TimeOption; punctuation: boolean; numbers: boolean;
   difficulty: Difficulty | undefined; language: string; showDiacritics: boolean;
   customText: string;
-  codeLanguage: string; codeChapter: string; codeExt: string;
+  codeLanguage: string; codeChapter: string;
 }>;
 
 interface UseTypingTestProps {
@@ -33,7 +33,6 @@ interface UseTypingTestProps {
   onFocusChange?: (focused: boolean) => void;
   onWrongKey?: () => void;
   pauseTypingInputRefocus?: boolean;
-  codeManifest?: CodeManifest;
 }
 
 export function useTypingTest({
@@ -43,7 +42,6 @@ export function useTypingTest({
   onFocusChange,
   onWrongKey,
   pauseTypingInputRefocus = false,
-  codeManifest = {},
 }: UseTypingTestProps) {
   const { language, showDiacritics } = useSettings();
   const isRTL = isRTLLanguage(language);
@@ -63,7 +61,8 @@ export function useTypingTest({
   const [customText, setCustomText] = useState<string>(DEFAULT_CUSTOM_TEXT);
   const [codeLanguage, setCodeLanguage] = useState<string>("");
   const [codeChapter, setCodeChapter] = useState<string>("");
-  const [codeExt, setCodeExt] = useState<string>("");
+
+  const codeContentCache = useRef<Record<string, string>>({});
 
   // Language word pool cache (kept in a ref so it survives re-renders)
   const langPoolRef = useRef<{ code: string; hard: boolean; words: string[] } | null>(null);
@@ -185,23 +184,13 @@ export function useTypingTest({
       setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
     } else if (m === "code") {
       const c = getCommentPrefix(cl);
-      const ext = (overrides.codeExt ?? codeExt) || "js";
       if (cl && cc) {
-        setWords([c]);
-        setCodeLoading(true);
-        try {
-          const res = await fetch(`/code/${cl}/${cc}.${ext}`);
-          if (res.ok) {
-            const data = await res.text();
-            const newWords = data.split(/\s+/).filter(w => w.length > 0);
-            setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
-          } else {
-            setWords([c, "error", "loading", "file"]);
-          }
-        } catch {
+        const content = getCodeContent(cl, cc);
+        if (content) {
+          const newWords = content.split(/\s+/).filter(w => w.length > 0);
+          setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
+        } else {
           setWords([c, "error", "loading", "file"]);
-        } finally {
-          setCodeLoading(false);
         }
       } else {
         const missing = !cl && !cc ? ["language", "and", "chapter"] : !cl ? ["language"] : ["chapter"];
@@ -259,7 +248,6 @@ export function useTypingTest({
     const storedCustomText = readStoredCustomText();
     const storedCodeLang = readStoredCodeLanguage();
     const storedCodeChap = readStoredCodeChapter();
-    const storedCodeExt = readStoredCodeExt();
 
     const m = storedMode ?? mode;
     const to = storedTime ?? timeOption;
@@ -272,13 +260,10 @@ export function useTypingTest({
     
     let activeCodeLang = codeLanguage;
     let activeCodeChap = codeChapter;
-    let activeCodeExt = codeExt;
     if (storedCodeLang) { activeCodeLang = storedCodeLang; setCodeLanguage(storedCodeLang); }
     else if (m === "code") { activeCodeLang = "javascript"; setCodeLanguage("javascript"); }
     if (storedCodeChap) { activeCodeChap = storedCodeChap; setCodeChapter(storedCodeChap); }
-    else if (m === "code") { activeCodeChap = codeManifest["javascript"]?.chapters[0] ?? "00_variables"; setCodeChapter(activeCodeChap); }
-    if (storedCodeExt) { activeCodeExt = storedCodeExt; setCodeExt(storedCodeExt); }
-    else if (m === "code") { const ext = codeManifest[activeCodeLang]?.ext ?? "js"; activeCodeExt = ext; setCodeExt(ext); }
+    else if (m === "code") { activeCodeChap = CODE_MANIFEST["javascript"]?.chapters[0] ?? "00_variables"; setCodeChapter(activeCodeChap); }
 
     if (storedMode !== undefined) setMode(storedMode);
     if (storedTime !== undefined) setTimeOption(storedTime);
@@ -300,18 +285,14 @@ export function useTypingTest({
       setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
     } else if (m === "code") {
       const c = getCommentPrefix(activeCodeLang);
-      const ext = activeCodeExt || codeExt || "js";
       if (activeCodeLang && activeCodeChap) {
-        setWords([c]);
-        setCodeLoading(true);
-        fetch(`/code/${activeCodeLang}/${activeCodeChap}.${ext}`)
-          .then(res => res.text())
-          .then(data => {
-            const newWords = data.split(/\s+/).filter(w => w.length > 0);
-            setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
-          })
-          .catch(() => setWords([c, "error", "loading", "file"]))
-          .finally(() => setCodeLoading(false));
+        const content = getCodeContent(activeCodeLang, activeCodeChap);
+        if (content) {
+          const newWords = content.split(/\s+/).filter(w => w.length > 0);
+          setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
+        } else {
+          setWords([c, "error", "loading", "file"]);
+        }
       } else {
         const missing = !activeCodeLang && !activeCodeChap ? ["language", "and", "chapter"] : !activeCodeLang ? ["language"] : ["chapter"];
         setWords([c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"]);
@@ -730,21 +711,19 @@ export function useTypingTest({
     resetTest({ difficulty: next });
   }, [difficulty, resetTest]);
 
-const onCodeLanguageChange = useCallback((next: string, ext: string) => {
+const onCodeLanguageChange = useCallback((next: string) => {
     setCodeLanguage(next);
-    setCodeExt(ext);
-    const firstChap = codeManifest[next]?.chapters[0] ?? "";
+    const firstChap = CODE_MANIFEST[next]?.chapters[0] ?? "";
     setCodeChapter(firstChap);
     localStorage.setItem(CODE_LANGUAGE_STORAGE_KEY, next);
-    localStorage.setItem(CODE_EXT_STORAGE_KEY, ext);
     if (firstChap) {
       localStorage.setItem(CODE_CHAPTER_STORAGE_KEY, firstChap);
-      resetTest({ codeLanguage: next, codeChapter: firstChap, codeExt: ext });
+      resetTest({ codeLanguage: next, codeChapter: firstChap });
     } else {
       localStorage.removeItem(CODE_CHAPTER_STORAGE_KEY);
-      resetTest({ codeLanguage: next, codeChapter: "", codeExt: ext });
+      resetTest({ codeLanguage: next, codeChapter: "" });
     }
-  }, [resetTest, codeManifest]);
+  }, [resetTest]);
 
   const onCodeChapterChange = useCallback((next: string) => {
     setCodeChapter(next);
@@ -759,7 +738,7 @@ const onCodeLanguageChange = useCallback((next: string, ext: string) => {
     // State
     mode, timeOption, wordOption, quoteLength, quoteAuthor,
     punctuation, numbers, difficulty, customText,
-    codeLanguage, codeChapter, codeExt,
+    codeLanguage, codeChapter,
     words, typed, wordIndex, started, rowOffset, finished,
     timeLeft, wordInputs, showControls, isFocused, resetting, isActivelyTyping,
     screenFade, wpm, accuracy, capsLock, codeLoading,

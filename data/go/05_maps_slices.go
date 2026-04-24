@@ -1,6 +1,3 @@
-//go:build ignore
-
-// Topic: Maps and Iteration
 scores := map[string]int{
     "alice": 92,
     "bob":   85,

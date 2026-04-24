@@ -1,4 +1,3 @@
-# Topic: Docker and Git
 docker build -t myapp:latest .
 docker run -d \
     -p 8080:8080 \

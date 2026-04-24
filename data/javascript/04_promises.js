@@ -1,4 +1,3 @@
-// Topic: Promises
 function loadData(url) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {

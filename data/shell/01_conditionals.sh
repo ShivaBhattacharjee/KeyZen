@@ -1,4 +1,3 @@
-# Topic: Conditionals and Arguments
 if [ -z "$1" ]; then
     echo "usage: $0 <name>"
     exit 1

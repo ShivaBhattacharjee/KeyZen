@@ -1,7 +1,7 @@
 {
-  "javascript": { "code": "javascript", "name": "JavaScript", "ext": "js", "chapters": ["00_variables", "01_fetch_api", "02_array_methods", "03_dom_selection", "04_promises", "05_classes", "06_destructuring", "07_arrow_closures", "08_events", "09_error_handling", "10_storage"] },
-  "go": { "code": "go", "name": "Go", "ext": "go", "chapters": ["00_basics", "01_http_server", "02_concurrency", "03_error_handling", "04_interfaces", "05_maps_slices", "06_structs", "07_closures", "08_json"] },
-  "dart": { "code": "dart", "name": "Dart", "ext": "dart", "chapters": ["00_classes", "01_async", "02_collections", "03_mixins"] },
-  "lua": { "code": "lua", "name": "Lua", "ext": "lua", "chapters": ["00_tables", "01_metatables", "02_file_io", "03_coroutines"] },
-  "shell": { "code": "shell", "name": "Shell", "ext": "sh", "chapters": ["00_boilerplate", "01_conditionals", "02_loops", "03_docker_git", "04_text"] }
+  "javascript": { "code": "javascript", "name": "JavaScript", "ext": "txt", "chapters": ["00_variables", "01_fetch_api", "02_array_methods", "03_dom_selection", "04_promises", "05_classes", "06_destructuring", "07_arrow_closures", "08_events", "09_error_handling", "10_storage"] },
+  "go": { "code": "go", "name": "Go", "ext": "txt", "chapters": ["00_basics", "01_http_server", "02_concurrency", "03_error_handling", "04_interfaces", "05_maps_slices", "06_structs", "07_closures", "08_json"] },
+  "dart": { "code": "dart", "name": "Dart", "ext": "txt", "chapters": ["00_classes", "01_async", "02_collections", "03_mixins"] },
+  "lua": { "code": "lua", "name": "Lua", "ext": "txt", "chapters": ["00_tables", "01_metatables", "02_file_io", "03_coroutines"] },
+  "shell": { "code": "shell", "name": "Shell", "ext": "txt", "chapters": ["00_boilerplate", "01_conditionals", "02_loops", "03_docker_git", "04_text"] }
 }

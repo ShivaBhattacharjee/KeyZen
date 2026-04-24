@@ -14,6 +14,9 @@ function customTextToWords(text: string): string[] {
   return text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
 }
 
+const getCommentPrefix = (lang: string): string =>
+  lang === "shell" || lang === "bash" ? "#" : lang === "lua" ? "--" : "//";
+
 type ResetOverrides = Partial<{
   mode: TestMode; quoteLength: QuoteLength; wordOption: WordOption;
   timeOption: TimeOption; punctuation: boolean; numbers: boolean;
@@ -176,22 +179,25 @@ export function useTypingTest({
       const customWords = customTextToWords(ct);
       setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
     } else if (m === "code") {
+      const c = getCommentPrefix(cl);
       if (cl && cc) {
+        setWords([c, "Loading", "code..."]);
         try {
           const res = await fetch(`/api/code/${cl}/${cc}`);
           if (res.ok) {
             const data = await res.json();
             // Split by whitespace but keep tokens contiguous.
             const newWords = (data.content as string).split(/\s+/).filter(w => w.length > 0);
-            setWords(newWords.length > 0 ? newWords : ["/* empty file */"]);
+            setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
           } else {
-            setWords(["/* error loading file */"]);
+            setWords([c, "error", "loading", "file"]);
           }
         } catch {
-          setWords(["/* error loading file */"]);
+          setWords([c, "error", "loading", "file"]);
         }
       } else {
-        setWords([]);
+        const missing = !cl && !cc ? ["language", "and", "chapter"] : !cl ? ["language"] : ["chapter"];
+        setWords([c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"]);
       }
     } else {
       const newWords = await buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics: sd });
@@ -278,15 +284,22 @@ export function useTypingTest({
     } else if (m === "custom") {
       const customWords = customTextToWords(ct);
       setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
-    } else if (m === "code" && activeCodeLang && activeCodeChap) {
-      fetch(`/api/code/${activeCodeLang}/${activeCodeChap}`)
-        .then(res => res.json())
-        .then(data => {
-          const newWords = (data.content as string).split(/\s+/).filter(w => w.length > 0);
-          setWords(newWords.length > 0 ? newWords : ["/* empty file */"]);
-        })
-        .catch(() => setWords(["/* error loading file */"]));
-    } else if (m !== "code") {
+    } else if (m === "code") {
+      const c = getCommentPrefix(activeCodeLang);
+      if (activeCodeLang && activeCodeChap) {
+        setWords([c, "Loading", "code..."]);
+        fetch(`/api/code/${activeCodeLang}/${activeCodeChap}`)
+          .then(res => res.json())
+          .then(data => {
+            const newWords = (data.content as string).split(/\s+/).filter(w => w.length > 0);
+            setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
+          })
+          .catch(() => setWords([c, "error", "loading", "file"]));
+      } else {
+        const missing = !activeCodeLang && !activeCodeChap ? ["language", "and", "chapter"] : !activeCodeLang ? ["language"] : ["chapter"];
+        setWords([c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"]);
+      }
+    } else {
       buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics }).then((w) => setWords(w));
     }
     if (m === "time") setTimeLeft(to);
@@ -694,7 +707,9 @@ export function useTypingTest({
 
   const onCodeLanguageChange = useCallback((next: string) => {
     setCodeLanguage(next);
+    setCodeChapter("");
     localStorage.setItem(CODE_LANGUAGE_STORAGE_KEY, next);
+    localStorage.removeItem(CODE_CHAPTER_STORAGE_KEY);
     resetTest({ codeLanguage: next, codeChapter: "" });
   }, [resetTest]);
 

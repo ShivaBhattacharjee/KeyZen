@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
+// NOTE: This cache persists for the lifetime of the server process.
+// If data/ directory contents change, restart the server to reflect updates.
+let cachedManifest: Record<string, { code: string; name: string; chapters: string[] }> | null = null;
+
 export async function GET() {
+  if (cachedManifest) return NextResponse.json(cachedManifest);
+
   const dataDir = path.join(process.cwd(), "data");
   
   try {
@@ -38,7 +44,7 @@ export async function GET() {
         }
       }
     }
-    
+    cachedManifest = manifest;
     return NextResponse.json(manifest);
   } catch (error) {
     console.error("Failed to read data directory", error);

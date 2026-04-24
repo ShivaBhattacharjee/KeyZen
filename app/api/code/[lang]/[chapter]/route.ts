@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
+// NOTE: This cache persists for the lifetime of the server process.
+// Stores post-processed (trimmed + comment-stripped) file content.
+// Restart server if source files in data/ are modified.
+const fileCache = new Map<string, string>();
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ lang: string; chapter: string }> }
 ) {
   const { lang, chapter } = await params;
+  const cacheKey = `${lang}/${chapter}`;
+
+  if (fileCache.has(cacheKey)) {
+    return NextResponse.json({ content: fileCache.get(cacheKey) });
+  }
   
   // Safe directory paths
   const dataDir = path.join(process.cwd(), "data");
@@ -41,8 +51,11 @@ export async function GET(
       content = content.replace(/--.*$/gm, "");
     }
 
+    const finalContent = content.trim();
+    fileCache.set(cacheKey, finalContent);
+
     return NextResponse.json({
-      content: content.trim(),
+      content: finalContent,
     });
   } catch (error) {
     console.error("Failed to read chapter", error);

@@ -93,7 +93,7 @@ export function TestControls({
       <Popover>
         <PopoverTrigger asChild>
           <button className={codeSelectTriggerClass} data-state={codeLanguage ? "active" : "inactive"}>
-            {codeLanguage && codeManifest[codeLanguage] ? codeManifest[codeLanguage].name : "Language"}
+            {Object.keys(codeManifest).length === 0 ? "Loading..." : codeLanguage && codeManifest[codeLanguage] ? codeManifest[codeLanguage].name : "Language"}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm" align="center" sideOffset={8}>

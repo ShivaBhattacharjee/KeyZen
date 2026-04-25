@@ -22,7 +22,7 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const {
-    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting,
+    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair,
   } = useSettings()
   const isRTL = isRTLLanguage(language)
   const [isMobile, setIsMobile] = useState(false)
@@ -182,6 +182,11 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   label="Syntax highlighting"
                   enabled={syntaxHighlighting}
                   onToggle={() => setSyntaxHighlighting(!syntaxHighlighting)}
+                />
+                <ToggleRow
+                  label="Auto pair"
+                  enabled={autoPair}
+                  onToggle={() => setAutoPair(!autoPair)}
                 />
                 {isRTL && (
                   <ToggleRow

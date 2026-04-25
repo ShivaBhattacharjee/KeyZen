@@ -15,6 +15,10 @@ const LANG_NAMES = {
   dart: "Dart",
   lua: "Lua",
   shell: "Shell",
+  python: "Python",
+  typescript: "TypeScript",
+  rust: "Rust",
+  c: "C",
 };
 
 const LANG_EXT = {
@@ -23,6 +27,10 @@ const LANG_EXT = {
   dart: "dart",
   lua: "lua",
   shell: "sh",
+  python: "py",
+  typescript: "ts",
+  rust: "rs",
+  c: "c",
 };
 
 async function main() {

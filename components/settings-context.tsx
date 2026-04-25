@@ -124,6 +124,8 @@ interface SettingsContextType {
   setShowDiacritics: (v: boolean) => void;
   syntaxHighlighting: boolean;
   setSyntaxHighlighting: (v: boolean) => void;
+  autoPair: boolean;
+  setAutoPair: (v: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -165,6 +167,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [showDiacritics, setShowDiacriticsState] = useState(true);
   const [fontSize, setFontSizeState] = useState<FontSize>("md");
   const [syntaxHighlighting, setSyntaxHighlightingState] = useState(true);
+  const [autoPair, setAutoPairState] = useState(true);
 
   // Rule 4: one-time hydration from localStorage on mount, applying DOM side
   // effects inline here instead of in separate reactive useEffects.
@@ -210,6 +213,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const savedSyntaxHighlighting = localStorage.getItem("tc-syntax-highlighting");
     if (savedSyntaxHighlighting !== null) setSyntaxHighlightingState(savedSyntaxHighlighting !== "false");
+
+    const savedAutoPair = localStorage.getItem("tc-auto-pair");
+    if (savedAutoPair !== null) setAutoPairState(savedAutoPair !== "false");
   });
 
   // Rule 3: setAccent / setFont are event handlers that apply DOM changes
@@ -286,6 +292,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("tc-syntax-highlighting", String(v));
   };
 
+  const setAutoPair = (v: boolean) => {
+    setAutoPairState(v);
+    localStorage.setItem("tc-auto-pair", String(v));
+  };
+
   const fontCssFamily =
     FONT_OPTIONS.find((f) => f.id === font)?.cssFamily ?? "var(--font-mono)";
 
@@ -306,6 +317,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         showDiacritics, setShowDiacritics,
         fontSize, setFontSize,
         syntaxHighlighting, setSyntaxHighlighting,
+        autoPair, setAutoPair,
       }}
     >
       {children}

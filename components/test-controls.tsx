@@ -5,6 +5,7 @@ import { useAppChrome } from "@/components/app-chrome";
 import { motion, AnimatePresence } from "motion/react";
 import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, } from "@tabler/icons-react";
 import { CustomTextDialog } from "@/components/custom-text-dialog";
+import { CustomTimeDialog } from "@/components/custom-time-dialog";
 import type { QuoteLength } from "@/lib/quotes";
 import type { Difficulty } from "@/lib/words";
 import { cn } from "@/lib/utils"
@@ -64,7 +65,6 @@ export function TestControls({
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
   const [langSearch, setLangSearch] = useState("");
   const [customVal, setCustomVal] = useState("");
-  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
   const [wordPopoverOpen, setWordPopoverOpen] = useState(false);
   const { setTestSettingsOpen } = useAppChrome();
 
@@ -413,37 +413,18 @@ export function TestControls({
                       <span className="text-base font-semibold">{t}</span>
                     </button>
                   ))}
-                  <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
-                    <PopoverTrigger asChild>
+                  <CustomTimeDialog
+                    timeOption={timeOption}
+                    onSave={onTimeOptionChange}
+                    trigger={
                       <button
                         type="button"
                         className={drawerBtnClass(![15, 30, 60, 120].includes(timeOption))}
                       >
                         <IconTool size={18} />
                       </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-40 p-2" side="top" align="center">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
-                        <input
-                          type="number"
-                          placeholder="seconds"
-                          defaultValue={timeOption}
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === "Enter") {
-                              const val = parseInt(e.currentTarget.value);
-                              if (val > 0) {
-                                onTimeOptionChange(val);
-                                setTimePopoverOpen(false);
-                              }
-                            }
-                          }}
-                          className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                    }
+                  />
                 </div>
             )}
           </div>
@@ -675,34 +656,15 @@ export function TestControls({
                     {[15, 30, 60, 120].map((t) => (
                       <TabsTrigger key={t} value={String(t)} className="px-3 text-xs cursor-pointer">{t}</TabsTrigger>
                     ))}
-                    <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
-                      <PopoverTrigger asChild>
+                    <CustomTimeDialog
+                      timeOption={timeOption}
+                      onSave={onTimeOptionChange}
+                      trigger={
                         <TabsTrigger value="custom" className="px-3 text-xs cursor-pointer">
                           <IconTool size={13} className={cn(![15, 30, 60, 120].includes(timeOption) && "text-primary")} />
                         </TabsTrigger>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-40 p-2" sideOffset={12} align="center">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
-                          <input
-                            type="number"
-                            placeholder="seconds"
-                            defaultValue={timeOption}
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
-                              if (e.key === "Enter") {
-                                const val = parseInt(e.currentTarget.value);
-                                if (val > 0) {
-                                  onTimeOptionChange(val);
-                                  setTimePopoverOpen(false);
-                                }
-                              }
-                            }}
-                            className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      }
+                    />
                   </TabsList>
                 </Tabs>
               )}
@@ -713,7 +675,7 @@ export function TestControls({
         </div>
 
         {/* Mobile / tablet button */}
-        <div className="flex lg:hidden items-center justify-center mb-5">
+        <div className="flex fixed z-50 left-0 right-0 lg:hidden items-center justify-center mb-5">
           <button
             type="button"
             onClick={(e) => {

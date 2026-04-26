@@ -9,10 +9,30 @@ import { useSettings } from "@/components/settings-context";
 import { accuracyFromCounts, countWpm, wpmNumeratorFromCounts, } from "@/lib/wpm-count";
 import type { ResultStats, WpmSnapshot } from "@/components/results-screen";
 import { CODE_MANIFEST, getCodeContent } from "@/lib/code";
-import { type TestMode, type TimeOption, type WordOption, TEST_MODE_STORAGE_KEY, TIME_OPTION_STORAGE_KEY, WORD_OPTION_STORAGE_KEY, QUOTE_LENGTH_STORAGE_KEY, PUNCTUATION_STORAGE_KEY, NUMBERS_STORAGE_KEY, DIFFICULTY_STORAGE_KEY, CUSTOM_TEXT_STORAGE_KEY, DEFAULT_CUSTOM_TEXT, CODE_LANGUAGE_STORAGE_KEY, CODE_CHAPTER_STORAGE_KEY, readStoredTestMode, readStoredTimeOption, readStoredWordOption, readStoredQuoteLength, readStoredBool, readStoredDifficulty, readStoredCustomText, readStoredCodeLanguage, readStoredCodeChapter, } from "@/lib/test-storage";
+import { type TestMode, type TimeOption, type WordOption, TEST_MODE_STORAGE_KEY, TIME_OPTION_STORAGE_KEY, WORD_OPTION_STORAGE_KEY, QUOTE_LENGTH_STORAGE_KEY, PUNCTUATION_STORAGE_KEY, NUMBERS_STORAGE_KEY, DIFFICULTY_STORAGE_KEY, CUSTOM_TEXT_STORAGE_KEY, DEFAULT_CUSTOM_TEXT, CODE_LANGUAGE_STORAGE_KEY, CODE_CHAPTER_STORAGE_KEY, CUSTOM_CODE_LANGUAGE_STORAGE_KEY, readStoredTestMode, readStoredTimeOption, readStoredWordOption, readStoredQuoteLength, readStoredBool, readStoredDifficulty, readStoredCustomText, readStoredCodeLanguage, readStoredCodeChapter, readStoredCustomCodeLanguage, } from "@/lib/test-storage";
 
 function customTextToWords(text: string): string[] {
   return text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+}
+
+/** Parse raw code content into words, per-line word counts, and per-line indent levels. */
+function parseCodeContent(content: string): { words: string[]; lineLengths: number[]; lineIndents: number[] } {
+  const lines = content.split("\n");
+  const lineLengths: number[] = [];
+  const lineIndents: number[] = [];
+  const allWords: string[] = [];
+  for (const line of lines) {
+    // Count leading spaces (treat 2 spaces or 1 tab as 1 indent unit)
+    const leadingSpaces = line.match(/^(\s*)/)?.[1] ?? "";
+    const tabCount = (leadingSpaces.match(/\t/g) ?? []).length;
+    const spaceCount = leadingSpaces.replace(/\t/g, "").length;
+    const indent = tabCount + Math.floor(spaceCount / 2);
+    const lineWords = line.split(/\s+/).filter(w => w.length > 0);
+    lineLengths.push(lineWords.length);
+    lineIndents.push(indent);
+    allWords.push(...lineWords);
+  }
+  return { words: allWords.filter(w => w.length > 0), lineLengths, lineIndents };
 }
 
 const getCommentPrefix = (lang: string): string =>
@@ -22,7 +42,7 @@ type ResetOverrides = Partial<{
   mode: TestMode; quoteLength: QuoteLength; wordOption: WordOption;
   timeOption: TimeOption; punctuation: boolean; numbers: boolean;
   difficulty: Difficulty | undefined; language: string; showDiacritics: boolean;
-  customText: string;
+  customText: string; customCodeLanguage: string;
   codeLanguage: string; codeChapter: string;
 }>;
 
@@ -43,7 +63,7 @@ export function useTypingTest({
   onWrongKey,
   pauseTypingInputRefocus = false,
 }: UseTypingTestProps) {
-  const { language, showDiacritics } = useSettings();
+  const { language, showDiacritics, autoPair } = useSettings();
   const isRTL = isRTLLanguage(language);
 
   const pauseRefocusRef = useRef(false);
@@ -59,6 +79,7 @@ export function useTypingTest({
   const [numbers, setNumbers] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>("easy");
   const [customText, setCustomText] = useState<string>(DEFAULT_CUSTOM_TEXT);
+  const [customCodeLanguage, setCustomCodeLanguage] = useState<string>("");
   const [codeLanguage, setCodeLanguage] = useState<string>("");
   const [codeChapter, setCodeChapter] = useState<string>("");
 
@@ -69,6 +90,9 @@ export function useTypingTest({
 
   // ── Test state ───────────────────────────────────────────────────────────
   const [words, setWords] = useState<string[]>([]);
+  // codeLines: number of words per line, codeIndents: leading spaces per line
+  const [codeLines, setCodeLines] = useState<number[]>([]);
+  const [codeIndents, setCodeIndents] = useState<number[]>([]);
   const [typed, setTyped] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [started, setStarted] = useState(false);
@@ -97,6 +121,7 @@ export function useTypingTest({
   const activeWordRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tabPressedRef = useRef(false);
+  const isComposingRef = useRef(false);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const screenFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,6 +195,7 @@ export function useTypingTest({
     const lang = overrides.language ?? language;
     const sd = "showDiacritics" in overrides ? overrides.showDiacritics : showDiacritics;
     const ct = overrides.customText ?? customText;
+    const ccl = "customCodeLanguage" in overrides ? (overrides.customCodeLanguage ?? "") : customCodeLanguage;
     const cl = overrides.codeLanguage ?? codeLanguage;
     const cc = overrides.codeChapter ?? codeChapter;
     const wc = m === "time" ? 200 : m === "words" ? wo : 100;
@@ -178,27 +204,47 @@ export function useTypingTest({
     if (m === "quote") {
       const { words: newWords, author } = getQuote(ql);
       setWords(newWords);
+      setCodeLines([]);
+      setCodeIndents([]);
       setQuoteAuthor(author);
     } else if (m === "custom") {
-      const customWords = customTextToWords(ct);
-      setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
+      if (ccl) {
+        const parsed = parseCodeContent(ct);
+        setWords(parsed.words.length > 0 ? parsed.words : customTextToWords(DEFAULT_CUSTOM_TEXT));
+        setCodeLines(parsed.words.length > 0 ? parsed.lineLengths : []);
+        setCodeIndents(parsed.words.length > 0 ? parsed.lineIndents : []);
+      } else {
+        const customWords = customTextToWords(ct);
+        setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
+        setCodeLines([]);
+        setCodeIndents([]);
+      }
     } else if (m === "code") {
       const c = getCommentPrefix(cl);
       if (cl && cc) {
         const content = getCodeContent(cl, cc);
         if (content) {
-          const newWords = content.split(/\s+/).filter(w => w.length > 0);
-          setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
+          const parsed = parseCodeContent(content);
+          setWords(parsed.words.length > 0 ? parsed.words : [c, "empty", "file"]);
+          setCodeLines(parsed.words.length > 0 ? parsed.lineLengths : [3]);
+          setCodeIndents(parsed.words.length > 0 ? parsed.lineIndents : [0]);
         } else {
           setWords([c, "error", "loading", "file"]);
+          setCodeLines([4]);
+          setCodeIndents([0]);
         }
       } else {
         const missing = !cl && !cc ? ["language", "and", "chapter"] : !cl ? ["language"] : ["chapter"];
-        setWords([c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"]);
+        const fallback = [c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"];
+        setWords(fallback);
+        setCodeLines([fallback.length]);
+        setCodeIndents([0]);
       }
     } else {
       const newWords = await buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics: sd });
       setWords(newWords);
+      setCodeLines([]);
+      setCodeIndents([]);
     }
     setTyped("");
     setWordIndex(0);
@@ -273,29 +319,46 @@ export function useTypingTest({
     if (storedNumbers !== undefined) setNumbers(storedNumbers);
     if (storedDifficulty !== undefined) setDifficulty(storedDifficulty);
     if (storedCustomText !== undefined) setCustomText(storedCustomText);
+    const storedCustomCodeLang = readStoredCustomCodeLanguage();
+    if (storedCustomCodeLang) setCustomCodeLanguage(storedCustomCodeLang);
 
     const ct = storedCustomText ?? customText;
+    const activeCCL = storedCustomCodeLang ?? customCodeLanguage;
     const wc = m === "time" ? 200 : m === "words" ? wo : 100;
     if (m === "quote") {
       const { words: initWords, author } = getQuote(ql);
       setWords(initWords);
       setQuoteAuthor(author);
     } else if (m === "custom") {
-      const customWords = customTextToWords(ct);
-      setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
+      if (activeCCL) {
+        const parsed = parseCodeContent(ct);
+        setWords(parsed.words.length > 0 ? parsed.words : customTextToWords(DEFAULT_CUSTOM_TEXT));
+        setCodeLines(parsed.words.length > 0 ? parsed.lineLengths : []);
+        setCodeIndents(parsed.words.length > 0 ? parsed.lineIndents : []);
+      } else {
+        const customWords = customTextToWords(ct);
+        setWords(customWords.length > 0 ? customWords : customTextToWords(DEFAULT_CUSTOM_TEXT));
+      }
     } else if (m === "code") {
       const c = getCommentPrefix(activeCodeLang);
       if (activeCodeLang && activeCodeChap) {
         const content = getCodeContent(activeCodeLang, activeCodeChap);
         if (content) {
-          const newWords = content.split(/\s+/).filter(w => w.length > 0);
-          setWords(newWords.length > 0 ? newWords : [c, "empty", "file"]);
+          const parsed = parseCodeContent(content);
+          setWords(parsed.words.length > 0 ? parsed.words : [c, "empty", "file"]);
+          setCodeLines(parsed.words.length > 0 ? parsed.lineLengths : [3]);
+          setCodeIndents(parsed.words.length > 0 ? parsed.lineIndents : [0]);
         } else {
           setWords([c, "error", "loading", "file"]);
+          setCodeLines([4]);
+          setCodeIndents([0]);
         }
       } else {
         const missing = !activeCodeLang && !activeCodeChap ? ["language", "and", "chapter"] : !activeCodeLang ? ["language"] : ["chapter"];
-        setWords([c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"]);
+        const fallback = [c, "Select", "a", ...missing, "from", "the", "top", "menu", "to", "start"];
+        setWords(fallback);
+        setCodeLines([fallback.length]);
+        setCodeIndents([0]);
       }
     } else {
       buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics }).then((w) => setWords(w));
@@ -386,10 +449,29 @@ export function useTypingTest({
     setWordInputs((prev) => prev.slice(0, -1));
     if (prevInput.length < prevWord.length) onKeyHighlight?.(prevWord[prevInput.length]);
     else onKeyHighlight?.(" ");
-  }, [typed, wordIndex, wordInputs, words, onKeyHighlight]);
+    requestAnimationFrame(() => {
+      if (!activeWordRef.current) return;
+      const word = activeWordRef.current;
+      const lineH = word.offsetHeight + 4;
+      const row = Math.round(word.offsetTop / lineH);
+      setRowOffset(Math.max(0, row - 1) * lineH);
+    });
+  }, [typed, wordIndex, wordInputs, words, onKeyHighlight, activeWordRef]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // IME / dead-key composition (e.g. macOS AZERTY ^ + e → ê).
+      // Skip the keydowns the browser fires during composition — the final
+      // composed character is delivered via compositionend instead.
+      if (
+        isComposingRef.current ||
+        e.nativeEvent.isComposing ||
+        e.key === "Dead" ||
+        e.key === "Process"
+      ) {
+        return;
+      }
+
       const isAltWordDelete = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
         (e.key === "Backspace" || e.key === "Delete");
       const isCtrlBackspaceWordNav = e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey && e.key === "Backspace";
@@ -421,6 +503,51 @@ export function useTypingTest({
         e.preventDefault();
         if (mode === "zen" && started && !finished) {
           finishTest();
+        }
+        return;
+      }
+
+      // In code mode, Enter advances to the first word of the next line
+      if (e.key === "Enter" && mode === "code" && !e.shiftKey && !tabPressedRef.current) {
+        e.preventDefault();
+        if (finished) return;
+        if (!started) {
+          setStarted(true);
+          setStartTime(Date.now());
+          setShowControls(false);
+          onTypingActiveChange?.(true);
+        }
+        markTypingActive();
+        // Find the last word index of the current line
+        let lineStart = 0;
+        for (const lineLen of codeLines) {
+          const lineEnd = lineStart + lineLen - 1;
+          if (wordIndex >= lineStart && wordIndex <= lineEnd) {
+            // Commit current typed input for current word, then skip to next line
+            const nextInputs = [...wordInputs];
+            for (let i = wordIndex; i <= lineEnd; i++) {
+              nextInputs[i] = i === wordIndex ? typed : "";
+            }
+            const nextIndex = lineEnd + 1;
+            if (nextIndex >= words.length) {
+              setWordInputs(nextInputs);
+              finishTest();
+              return;
+            }
+            setWordInputs(nextInputs);
+            setWordIndex(nextIndex);
+            setTyped("");
+            onKeyHighlight?.(null);
+            requestAnimationFrame(() => {
+              if (!activeWordRef.current) return;
+              const word = activeWordRef.current;
+              const lineH = word.offsetHeight + 4;
+              const row = Math.round(word.offsetTop / lineH);
+              setRowOffset(Math.max(0, row - 1) * lineH);
+            });
+            return;
+          }
+          lineStart += lineLen;
         }
         return;
       }
@@ -510,6 +637,14 @@ export function useTypingTest({
           setWordIndex((prev) => prev - 1);
           setTyped(prevInput);
           setWordInputs((prev) => prev.slice(0, -1));
+          // Recalculate scroll so the view follows back to the previous word
+          requestAnimationFrame(() => {
+            if (!activeWordRef.current) return;
+            const word = activeWordRef.current;
+            const lineH = word.offsetHeight + 4;
+            const row = Math.round(word.offsetTop / lineH);
+            setRowOffset(Math.max(0, row - 1) * lineH);
+          });
         } else if (typed.length > 0) {
           const lastIdx = typed.length - 1;
           const isWrong = lastIdx >= currentWord.length || typed[lastIdx] !== currentWord[lastIdx];
@@ -520,6 +655,33 @@ export function useTypingTest({
       }
 
       if (e.key.length === 1) {
+        // ── Auto-pair: in code mode, when user types an opener and the very next
+        // expected char in the word is the matching closer, skip over the closer
+        // automatically (it's already there — user just needs to type through it).
+        const PAIR_MAP: Record<string, string> = {
+          "(": ")", "{": "}", "[": "]", '"': '"', "'": "'", "`": "`",
+        };
+        if (autoPair && mode === "code" && PAIR_MAP[e.key]) {
+          const closer = PAIR_MAP[e.key];
+          const charIndex = typed.length;
+          // Check if the word has the closer immediately after the opener position
+          if (
+            charIndex < currentWord.length &&
+            currentWord[charIndex] === e.key &&
+            currentWord[charIndex + 1] === closer
+          ) {
+            // Type opener + closer together so user skips typing the closer
+            allTypedRef.current += 1;
+            const nextTyped = typed + e.key + closer;
+            setTyped(nextTyped);
+            const isWrong = e.key !== currentWord[charIndex];
+            if (isWrong) onWrongKey?.();
+            const nextCharIndex = nextTyped.length;
+            onKeyHighlight?.(nextCharIndex < currentWord.length ? currentWord[nextCharIndex] : " ");
+            return;
+          }
+        }
+
         allTypedRef.current += 1;
         const nextTyped = typed + e.key;
         setTyped(nextTyped);
@@ -546,14 +708,17 @@ export function useTypingTest({
       }
     },
     [
-      finished, started, words, wordIndex, typed, wordInputs,
-      mode, timeOption, resetTest, finishTest, onKeyHighlight,
+      finished, started, words, codeLines, wordIndex, typed, wordInputs,
+      mode, timeOption, resetTest, finishTest, onKeyHighlight, autoPair,
       recordWordSnapshot, markTypingActive, onTypingActiveChange, onWrongKey, clearWordOrNavigateBack,
     ],
   );
 
   const handleFocus = () => {
     if (pauseRefocusRef.current) return;
+    // Don't steal focus from Monaco or any other dialog-hosted input
+    const active = document.activeElement;
+    if (active && active.closest('[role="dialog"], [data-radix-dialog-content]')) return;
     inputRef.current?.focus();
   };
 
@@ -567,6 +732,38 @@ export function useTypingTest({
     setIsFocused(true);
     onFocusChange?.(true);
   }, [onFocusChange]);
+
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(
+    (e: React.CompositionEvent<HTMLInputElement>) => {
+      isComposingRef.current = false;
+      const data = e.data;
+      // Re-sync the controlled input — during composition the browser may have
+      // written into the DOM input value; React won't reset it because onChange
+      // is a no-op. Without this, the next dead-key composition can produce
+      // duplicated characters in the DOM input.
+      if (inputRef.current && inputRef.current.value !== typed) {
+        inputRef.current.value = typed;
+      }
+      if (!data) return;
+      // Replay each composed character through the same keydown logic.
+      for (const ch of data) {
+        handleKeyDown({
+          key: ch,
+          altKey: false,
+          ctrlKey: false,
+          metaKey: false,
+          shiftKey: false,
+          preventDefault: () => {},
+          nativeEvent: { isComposing: false } as unknown as KeyboardEvent,
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
+      }
+    },
+    [handleKeyDown, typed],
+  );
 
   // ── Frozen stats (computed inline, not via effect) ────────────────────────
   const frozenStatsRef = useRef<ResultStats | null>(null);
@@ -711,10 +908,13 @@ export function useTypingTest({
     resetTest({ numbers: next });
   }, [numbers, resetTest]);
 
-  const onCustomTextChange = useCallback((next: string) => {
+  const onCustomTextChange = useCallback((next: string, codeLang?: string) => {
     setCustomText(next);
     localStorage.setItem(CUSTOM_TEXT_STORAGE_KEY, next);
-    resetTest({ customText: next, mode: "custom" });
+    setCustomCodeLanguage(codeLang ?? "");
+    if (codeLang) localStorage.setItem(CUSTOM_CODE_LANGUAGE_STORAGE_KEY, codeLang);
+    else localStorage.removeItem(CUSTOM_CODE_LANGUAGE_STORAGE_KEY);
+    resetTest({ customText: next, mode: "custom", customCodeLanguage: codeLang ?? "" });
   }, [resetTest]);
 
   const onDifficultyToggle = useCallback((d: Difficulty) => {
@@ -751,9 +951,9 @@ const onCodeLanguageChange = useCallback((next: string) => {
   return {
     // State
     mode, timeOption, wordOption, quoteLength, quoteAuthor,
-    punctuation, numbers, difficulty, customText,
+    punctuation, numbers, difficulty, customText, customCodeLanguage,
     codeLanguage, codeChapter,
-    words, typed, wordIndex, started, rowOffset, finished,
+    words, codeLines, codeIndents, typed, wordIndex, started, rowOffset, finished,
     timeLeft, wordInputs, showControls, isFocused, resetting, isActivelyTyping,
     screenFade, wpm, accuracy, capsLock, codeLoading,
     // Computed
@@ -763,6 +963,7 @@ const onCodeLanguageChange = useCallback((next: string) => {
     inputRef, wordsContainerRef, activeWordRef,
     // Handlers
     handleKeyDown, handleFocus, handleInputBlur, handleInputFocus,
+    handleCompositionStart, handleCompositionEnd,
     handleMouseMove, handleResultsRestart, handleResultsNext,
     onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
     onPunctuationToggle, onNumbersToggle, onDifficultyToggle,

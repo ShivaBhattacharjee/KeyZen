@@ -38,7 +38,7 @@ export const WordItem = memo(function WordItem({
     <div
       ref={isActive ? elemRef : undefined}
       className={cn(
-        "relative",
+        "relative whitespace-nowrap",
         isPast && hasError && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full after:bg-destructive/50",
       )}
       style={dimmed ? { opacity: 0.05 } : undefined}

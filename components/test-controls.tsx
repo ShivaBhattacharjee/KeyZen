@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useAppChrome } from "@/components/app-chrome";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, } from "@tabler/icons-react";
 import { CustomTextDialog } from "@/components/custom-text-dialog";
 import type { QuoteLength } from "@/lib/quotes";
 import type { Difficulty } from "@/lib/words";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, } from "@/components/animate-ui/components/animate/tabs";
 import type { TestMode, TimeOption, WordOption } from "@/lib/test-storage";
 import { Drawer, DrawerContent, DrawerTitle, } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogTitle, } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover";
+
+import { CaretDownIcon } from "@phosphor-icons/react";
 
 export type CodeManifest = Record<string, { code: string; name: string; ext: string; chapters: string[] }>;
 
@@ -36,7 +39,7 @@ export interface TestControlsProps {
   onPunctuationToggle: () => void;
   onNumbersToggle: () => void;
   onDifficultyToggle: (d: Difficulty) => void;
-  onCustomTextChange: (next: string) => void;
+  onCustomTextChange: (next: string, codeLanguage?: string) => void;
   onCodeLanguageChange: (lang: string) => void;
   onCodeChapterChange: (chapter: string) => void;
   onRestart: () => void;
@@ -53,6 +56,13 @@ export function TestControls({
 }: TestControlsProps) {
   const [drawerOpen, setDrawerOpenState] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  // Desktop-bar Popovers
+  const [desktopLangOpen, setDesktopLangOpen] = useState(false);
+  const [desktopChapterOpen, setDesktopChapterOpen] = useState(false);
+  // Mobile/tablet drawer accordions
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
+  const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
+  const [langSearch, setLangSearch] = useState("");
   const { setTestSettingsOpen } = useAppChrome();
 
   const setDrawerOpen = (open: boolean) => {
@@ -73,7 +83,7 @@ export function TestControls({
   );
 
   const drawerBtnClass = (active: boolean) => cn(
-    "flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 text-xs font-medium transition-colors border cursor-pointer",
+    "flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-xs font-medium transition-colors border cursor-pointer",
     active
       ? "border-primary/40 bg-primary/10 text-primary"
       : "border-border bg-zinc-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground hover:border-border/80",
@@ -90,27 +100,57 @@ export function TestControls({
 
   const codeSelectors = (
     <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px]">
-      <Popover>
+      <Popover open={desktopLangOpen} onOpenChange={setDesktopLangOpen}>
         <PopoverTrigger asChild>
           <button className={codeSelectTriggerClass} data-state={codeLanguage ? "active" : "inactive"}>
             {Object.keys(codeManifest).length === 0 ? "Loading..." : codeLanguage && codeManifest[codeLanguage] ? codeManifest[codeLanguage].name : "Language"}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm" align="center" sideOffset={8}>
-          {Object.values(codeManifest).map(lang => (
-            <button
-              type="button"
-              key={lang.code}
-              onClick={() => onCodeLanguageChange(lang.code)}
-              className={renderDropdownOptionClass(codeLanguage === lang.code)}
-            >
-              {lang.name}
-            </button>
-          ))}
+          <div className="px-1 pb-1.5 pt-1">
+            <input 
+              type="text" 
+              placeholder="Search language..." 
+              value={langSearch}
+              onChange={(e) => setLangSearch(e.target.value)}
+              className="w-full bg-zinc-200/50 dark:bg-zinc-700/50 text-foreground px-2.5 py-1.5 rounded min-w-[140px] text-xs outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/70"
+              autoFocus
+            />
+          </div>
+          <div className="flex flex-col max-h-[300px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar" style={{ scrollbarWidth: "thin" }}>
+            {Object.values(codeManifest)
+              .filter(lang => 
+                !langSearch || 
+                lang.name.toLowerCase().includes(langSearch.toLowerCase()) || 
+                lang.ext.toLowerCase().includes(langSearch.toLowerCase()) || 
+                lang.code.toLowerCase().includes(langSearch.toLowerCase())
+              )
+              .map(lang => (
+              <button
+                type="button"
+                key={lang.code}
+                onClick={() => {
+                  onCodeLanguageChange(lang.code);
+                  setDesktopLangOpen(false);
+                }}
+                className={renderDropdownOptionClass(codeLanguage === lang.code)}
+              >
+                {lang.name}
+              </button>
+            ))}
+            {Object.values(codeManifest).filter(lang => 
+              !langSearch || 
+              lang.name.toLowerCase().includes(langSearch.toLowerCase()) || 
+              lang.ext.toLowerCase().includes(langSearch.toLowerCase()) || 
+              lang.code.toLowerCase().includes(langSearch.toLowerCase())
+            ).length === 0 && (
+              <p className="py-4 text-center text-xs text-muted-foreground w-[140px]">No results</p>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
 
-      <Popover>
+      <Popover open={desktopChapterOpen} onOpenChange={setDesktopChapterOpen}>
         <PopoverTrigger asChild>
           <button 
             className={codeSelectTriggerClass} 
@@ -120,12 +160,15 @@ export function TestControls({
             {codeChapter ? codeChapter.replace(/_/g, " ") : "Chapter"}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm max-h-[300px] overflow-y-auto overflow-x-hidden" align="center" sideOffset={8} style={{ scrollbarWidth: "none" }}>
+        <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm max-h-[300px] overflow-y-auto overflow-x-hidden custom-scrollbar" align="center" sideOffset={8} style={{ scrollbarWidth: "thin" }}>
           {codeLanguage && codeManifest[codeLanguage]?.chapters.map(chap => (
             <button
               type="button"
               key={chap}
-              onClick={() => onCodeChapterChange(chap)}
+              onClick={() => {
+                onCodeChapterChange(chap);
+                setDesktopChapterOpen(false);
+              }}
               className={renderDropdownOptionClass(codeChapter === chap)}
             >
               {chap.replace(/_/g, " ")}
@@ -137,40 +180,8 @@ export function TestControls({
   );
 
   const settingsContent = (
-    <div className="flex flex-col gap-5 px-4 pb-8 pt-2">
-      {/* Toggles group */}
-      <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Toggles</span>
-        <div className="grid grid-cols-3 gap-2">
-          <button type="button" onClick={onPunctuationToggle} className={drawerBtnClass(punctuation)}>
-            <IconAt size={18} />
-            <span>punctuation</span>
-          </button>
-          <button type="button" onClick={onNumbersToggle} className={drawerBtnClass(numbers)}>
-            <IconNumber size={18} />
-            <span>numbers</span>
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4 px-4 pb-6 pt-2">
 
-      <div className="h-px w-full bg-border" />
-
-      {/* Difficulty group */}
-      <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Difficulty</span>
-        <div className="grid grid-cols-3 gap-2">
-          <button type="button" onClick={() => onDifficultyToggle("easy")} className={drawerBtnClass(difficulty === "easy")}>
-            <IconFeather size={18} />
-            <span>easy</span>
-          </button>
-          <button type="button" onClick={() => onDifficultyToggle("hard")} className={drawerBtnClass(difficulty === "hard")}>
-            <IconFlame size={18} />
-            <span>hard</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="h-px w-full bg-border" />
 
       {/* Mode group */}
       <div className="flex flex-col gap-2">
@@ -236,10 +247,11 @@ export function TestControls({
               <CustomTextDialog
                 value={customText}
                 onSave={onCustomTextChange}
+                codeManifest={codeManifest}
                 trigger={
                   <button
                     type="button"
-                    className="flex items-center justify-center gap-2 rounded-xl border border-border bg-zinc-100 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground dark:bg-zinc-800 cursor-pointer"
+                    className="flex items-center justify-center gap-2 rounded-lg border border-border bg-zinc-100 px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground dark:bg-zinc-800 cursor-pointer"
                   >
                     <IconPencil size={15} />
                     change text
@@ -247,31 +259,113 @@ export function TestControls({
                 }
               />
             ) : mode === "code" ? (
-              <div className="flex flex-col gap-2">
-                <select
-                  value={codeLanguage}
-                  onChange={(e) => {
-                    const lang = codeManifest[e.target.value];
-                    if (lang) onCodeLanguageChange(lang.code);
-                  }}
-                  className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                >
-                  <option value="" disabled hidden>Select language</option>
-                  {Object.values(codeManifest).map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.name}</option>
-                  ))}
-                </select>
-                <select
-                  value={codeChapter}
-                  onChange={(e) => onCodeChapterChange(e.target.value)}
-                  disabled={!codeLanguage || !codeManifest[codeLanguage]}
-                  className="rounded-xl border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-sm font-medium text-muted-foreground outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 cursor-pointer"
-                >
-                  <option value="" disabled hidden>Select chapter</option>
-                  {codeLanguage && codeManifest[codeLanguage]?.chapters.map(chap => (
-                    <option key={chap} value={chap}>{chap.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-2 items-start">
+                <div className="flex flex-col gap-2 w-full relative">
+                  {/* Language picker — inline accordion (Popover portals are intercepted by vaul on mobile) */}
+                  <button
+                    type="button"
+                    onClick={() => { setLangPickerOpen((v) => !v); setLangSearch(""); }}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground cursor-pointer"
+                  >
+                    <span className="truncate">
+                      {codeLanguage && codeManifest[codeLanguage] ? codeManifest[codeLanguage].name : "Select language"}
+                    </span>
+                    <CaretDownIcon
+                      className={cn("size-4 shrink-0 transition-transform duration-200", langPickerOpen && "rotate-180")}
+                      weight="bold"
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {langPickerOpen && (
+                      <motion.div
+                        key="lang-accordion"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 flex flex-col max-h-40 md:max-h-56"
+                      >
+                        <div className="px-2 py-1.5 border-b border-border shrink-0">
+                            <input
+                              type="text"
+                              placeholder="Search language..."
+                              value={langSearch}
+                              onChange={(e) => setLangSearch(e.target.value)}
+                              className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
+                              autoFocus={false}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-0.5 p-1.5 overflow-y-auto custom-scrollbar flex-1">
+                            {(() => {
+                              const filtered = Object.values(codeManifest).filter(lang =>
+                                !langSearch ||
+                                lang.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+                                lang.ext.toLowerCase().includes(langSearch.toLowerCase()) ||
+                                lang.code.toLowerCase().includes(langSearch.toLowerCase())
+                              )
+                              return filtered.length > 0 ? (
+                                filtered.map((lang) => (
+                                  <button
+                                    type="button"
+                                    key={lang.code}
+                                    onClick={() => { onCodeLanguageChange(lang.code); setLangPickerOpen(false); setLangSearch(""); }}
+                                    className={renderDropdownOptionClass(codeLanguage === lang.code)}
+                                  >
+                                    {lang.name}
+                                  </button>
+                                ))
+                              ) : (
+                                <p className="py-3 text-center text-xs text-muted-foreground">No results</p>
+                              )
+                            })()}
+                          </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full relative">
+                  {/* Chapter picker — inline accordion */}
+                  <button
+                    type="button"
+                    disabled={!codeLanguage || !codeManifest[codeLanguage]}
+                    onClick={() => setChapterPickerOpen((v) => !v)}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="truncate">
+                      {codeChapter ? codeChapter.replace(/_/g, " ") : "Select chapter"}
+                    </span>
+                    <CaretDownIcon
+                      className={cn("size-4 shrink-0 transition-transform duration-200", chapterPickerOpen && "rotate-180")}
+                      weight="bold"
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {chapterPickerOpen && codeLanguage && codeManifest[codeLanguage] && (
+                      <motion.div
+                        key="chapter-accordion"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 flex flex-col max-h-40 md:max-h-56"
+                      >
+                        <div className="flex flex-col gap-0.5 p-1.5 overflow-y-auto custom-scrollbar flex-1">
+                          {codeManifest[codeLanguage].chapters.map((chap) => (
+                            <button
+                              type="button"
+                              key={chap}
+                              onClick={() => { onCodeChapterChange(chap); setChapterPickerOpen(false); }}
+                              className={renderDropdownOptionClass(codeChapter === chap)}
+                            >
+                              {chap.replace(/_/g, " ")}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
@@ -290,6 +384,71 @@ export function TestControls({
           </div>
         </>
       )}
+
+      <div className="h-px w-full bg-border" />
+
+      {/* Toggles + Difficulty — always visible, disabled in quote / code / custom mode */}
+      {(() => {
+        const disabled = mode === "quote" || mode === "code" || mode === "custom";
+        const tip = mode === "quote" ? "Not available in quote mode" : mode === "code" ? "Not available in code mode" : "Not available in custom mode";
+        return (
+          <TooltipProvider delayDuration={200}>
+            <>
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Difficulty</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { key: "easy", icon: IconFeather, label: "easy", active: difficulty === "easy", d: "easy" as const },
+                    { key: "hard", icon: IconFlame,   label: "hard", active: difficulty === "hard", d: "hard" as const },
+                  ] as const).map(({ key, icon: Icon, label, active, d }) => (
+                    <Tooltip key={key}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={disabled ? undefined : () => onDifficultyToggle(d)}
+                          className={cn(drawerBtnClass(active), disabled && "opacity-35 cursor-not-allowed")}
+                        >
+                          <Icon size={18} />
+                          <span>{label}</span>
+                        </button>
+                      </TooltipTrigger>
+                      {disabled && <TooltipContent side="bottom">{tip}</TooltipContent>}
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px w-full bg-border" />
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Toggles</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { key: "punctuation", icon: IconAt,     label: "punctuation", active: punctuation,  onClick: onPunctuationToggle },
+                    { key: "numbers",     icon: IconNumber,  label: "numbers",     active: numbers,      onClick: onNumbersToggle },
+                  ] as const).map(({ key, icon: Icon, label, active, onClick }) => (
+                    <Tooltip key={key}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={disabled ? undefined : onClick}
+                          className={cn(drawerBtnClass(active), disabled && "opacity-35 cursor-not-allowed")}
+                        >
+                          <Icon size={18} />
+                          <span>{label}</span>
+                        </button>
+                      </TooltipTrigger>
+                      {disabled && <TooltipContent side="bottom">{tip}</TooltipContent>}
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+            </>
+          </TooltipProvider>
+        );
+      })()}
     </div>
   );
 
@@ -305,28 +464,59 @@ export function TestControls({
       >
         {/* Desktop / large screen controls */}
         <div className="hidden lg:flex items-center justify-center gap-2 mt-6 whitespace-nowrap">
-          {/* Toggles: punctuation / numbers / difficulty */}
-          <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
-            <button type="button" onClick={onPunctuationToggle} className={btnClass(punctuation)}>
-              <IconAt size={14} />
-              punctuation
-            </button>
-            <button type="button" onClick={onNumbersToggle} className={btnClass(numbers)}>
-              <IconNumber size={14} />
-              numbers
-            </button>
-            <div className="h-4 w-px shrink-0 bg-border" />
-            <button type="button" onClick={() => onDifficultyToggle("easy")} className={btnClass(difficulty === "easy")}>
-              <IconFeather size={14} />
-              easy
-            </button>
-            <button type="button" onClick={() => onDifficultyToggle("hard")} className={btnClass(difficulty === "hard")}>
-              <IconFlame size={14} />
-              hard
-            </button>
-          </div>
-
-          <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+          {/* Toggles: punctuation / numbers / difficulty — disabled in quote / code / custom mode */}
+          {(() => {
+            const disabled = mode === "quote" || mode === "code" || mode === "custom";
+            const tip = mode === "quote" ? "Not available in quote mode" : mode === "code" ? "Not available in code mode" : mode === "custom" ? "Not available in custom mode" : "";
+            return (
+              <>
+                <TooltipProvider delayDuration={200}>
+                  <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
+                    {([
+                      { key: "punctuation", icon: IconAt,    label: "punctuation", active: punctuation, onClick: onPunctuationToggle },
+                      { key: "numbers",     icon: IconNumber, label: "numbers",     active: numbers,     onClick: onNumbersToggle },
+                    ] as const).map(({ key, icon: Icon, label, active, onClick }) => (
+                      <Tooltip key={key}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={disabled ? undefined : onClick}
+                            className={cn(btnClass(active), disabled && "opacity-35 cursor-not-allowed")}
+                          >
+                            <Icon size={14} />
+                            {label}
+                          </button>
+                        </TooltipTrigger>
+                        {disabled && <TooltipContent side="bottom">{tip}</TooltipContent>}
+                      </Tooltip>
+                    ))}
+                    <div className="h-4 w-px shrink-0 bg-border" />
+                    {([
+                      { key: "easy", icon: IconFeather, label: "easy", active: difficulty === "easy", d: "easy" as const },
+                      { key: "hard", icon: IconFlame,   label: "hard", active: difficulty === "hard", d: "hard" as const },
+                    ] as const).map(({ key, icon: Icon, label, active, d }) => (
+                      <Tooltip key={key}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={disabled ? undefined : () => onDifficultyToggle(d)}
+                            className={cn(btnClass(active), disabled && "opacity-35 cursor-not-allowed")}
+                          >
+                            <Icon size={14} />
+                            {label}
+                          </button>
+                        </TooltipTrigger>
+                        {disabled && <TooltipContent side="bottom">{tip}</TooltipContent>}
+                      </Tooltip>
+                    ))}
+                  </div>
+                </TooltipProvider>
+                <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+              </>
+            );
+          })()}
 
           {/* Mode tabs */}
           <Tabs value={mode} onValueChange={(v) => onModeChange(v as TestMode)} className="flex items-center">
@@ -372,6 +562,7 @@ export function TestControls({
                   <CustomTextDialog
                     value={customText}
                     onSave={onCustomTextChange}
+                    codeManifest={codeManifest}
                     trigger={
                       <button
                         type="button"
@@ -395,7 +586,7 @@ export function TestControls({
                 </Tabs>
               )}
 
-              <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+           
             </>
           )}
         </div>
@@ -437,7 +628,12 @@ export function TestControls({
                 <IconX size={14} />
               </button>
             </div>
-            {settingsContent}
+            <div
+              className="overflow-y-auto overscroll-contain"
+              style={{ touchAction: "pan-y" }}
+            >
+              {settingsContent}
+            </div>
           </DrawerContent>
         </Drawer>
       )}

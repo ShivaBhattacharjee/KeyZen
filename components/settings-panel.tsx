@@ -1,15 +1,15 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { IconX } from "@tabler/icons-react"
+import { IconX, IconLoader2 } from "@tabler/icons-react"
 import type { SoundPack } from "@/components/settings-context"
 import { CaretDownIcon } from "@phosphor-icons/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
 import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS, } from "@/components/settings-context"
 import { NextThemeSwitcher } from "@/components/kibo-ui/theme-switcher"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover"
+
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type { Language } from "@/lib/languages"
@@ -22,12 +22,14 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const {
-    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting,
+    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers, soundPackLoading,
   } = useSettings()
   const isRTL = isRTLLanguage(language)
   const [isMobile, setIsMobile] = useState(false)
   const [fontPickerOpen, setFontPickerOpen] = useState(false)
+  const [fontSearch, setFontSearch] = useState("")
   const [langPickerOpen, setLangPickerOpen] = useState(false)
+  const [langSearch, setLangSearch] = useState("")
   const [languages, setLanguages] = useState<Language[]>([])
   const [cacheInfo, setCacheInfo] = useState<string | null>(null)
 
@@ -91,37 +93,6 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <NextThemeSwitcher />
               </section>
 
-              {soundEnabled && !isMobile && (
-                <section>
-                  <SectionLabel>Keys</SectionLabel>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {SOUND_PACKS.map((s) => {
-                      const selected = soundPack === s.id
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => setSoundPack(s.id)}
-                          aria-pressed={selected}
-                          className={cn(
-                            "flex min-w-0 flex-col cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-center transition-colors outline-none",
-                            "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                            selected
-                              ? "border-primary bg-primary/10 text-foreground"
-                              : "border-input bg-background text-muted-foreground"
-                          )}
-                        >
-                          <SwitchIcon pack={s.id} selected={selected} />
-                          <span className="w-full text-[10px] leading-tight font-medium break-words">
-                            {s.label}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
               <section>
                 <SectionLabel>Accent</SectionLabel>
                 <div
@@ -156,12 +127,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               </section>
 
               <section className="flex flex-col gap-3">
-                <ToggleRow
-                  label="Show keyboard"
-                  enabled={showKeyboard}
-                  onToggle={() => setShowKeyboard(!showKeyboard)}
-                  disabledReason="keyboard not available on mobile"
-                />
+                <SectionLabel>Sound</SectionLabel>
                 <ToggleRow
                   label="Keyboard sound"
                   enabled={soundEnabled}
@@ -173,15 +139,77 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   enabled={clickSoundEnabled}
                   onToggle={() => setClickSoundEnabled(!clickSoundEnabled)}
                 />
+              </section>
+
+              {soundEnabled && !isMobile && (
+                <section>
+                  <SectionLabel>Sound Pack</SectionLabel>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {SOUND_PACKS.map((s) => {
+                      const selected = soundPack === s.id
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSoundPack(s.id)}
+                          aria-pressed={selected}
+                          className={cn(
+                            "flex min-w-0 flex-col cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-center transition-colors outline-none",
+                            "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                            selected
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-input bg-background text-muted-foreground"
+                          )}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <SwitchIcon pack={s.id} selected={selected} />
+                            {selected && soundPackLoading && (
+                              <div className="absolute inset-0 flex items-center justify-center rounded bg-background/50 backdrop-blur-[1px]">
+                                <IconLoader2 className="animate-spin text-primary" size={18} />
+                              </div>
+                            )}
+                          </div>
+                          <span className="w-full text-[10px] leading-tight font-medium wrap-break-word">
+                            {s.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
+              <section className="flex flex-col gap-3">
+                <SectionLabel>Interface</SectionLabel>
+                <ToggleRow
+                  label="Show keyboard"
+                  enabled={showKeyboard}
+                  onToggle={() => setShowKeyboard(!showKeyboard)}
+                  disabledReason="keyboard not available on mobile"
+                />
                 <ToggleRow
                   label="Realtime stats"
                   enabled={realtimeWpm}
                   onToggle={() => setRealtimeWpm(!realtimeWpm)}
                 />
+              </section>
+
+              <section className="flex flex-col gap-3">
+                <SectionLabel>Code</SectionLabel>
                 <ToggleRow
                   label="Syntax highlighting"
                   enabled={syntaxHighlighting}
                   onToggle={() => setSyntaxHighlighting(!syntaxHighlighting)}
+                />
+                <ToggleRow
+                  label="Auto pair"
+                  enabled={autoPair}
+                  onToggle={() => setAutoPair(!autoPair)}
+                />
+                <ToggleRow
+                  label="Line numbers"
+                  enabled={showLineNumbers}
+                  onToggle={() => setShowLineNumbers(!showLineNumbers)}
                 />
                 {isRTL && (
                   <ToggleRow
@@ -213,83 +241,97 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
               <section>
                 <SectionLabel>Font</SectionLabel>
-                <Popover open={fontPickerOpen} onOpenChange={setFontPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      aria-expanded={fontPickerOpen}
-                      className={cn(
-                        "mt-3 flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
-                        "hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                      )}
-                    >
-                      <span
-                        className="min-w-0 truncate"
-                        style={{ fontFamily: selectedFont?.cssFamily }}
-                      >
-                        {selectedFont?.label ?? font}
-                      </span>
-                      <CaretDownIcon
-                        className="size-4 shrink-0 text-muted-foreground"
-                        weight="bold"
-                      />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="gap-0 p-0"
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    style={{ width: "var(--radix-popover-trigger-width)" }}
+                {/* Inline accordion — avoids Popover portal which vaul intercepts on mobile */}
+                <div className="relative mt-3">
+                  <button
+                    type="button"
+                    onClick={() => { setFontPickerOpen((v) => !v); setFontSearch("") }}
+                    className={cn(
+                      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+                      "hover:bg-muted/50"
+                    )}
                   >
-                    <Command>
-                      <CommandInput placeholder="Search fonts..." />
-                      <CommandList>
-                        <CommandEmpty>No font found.</CommandEmpty>
-                        <CommandGroup heading="Mono">
-                          {FONT_OPTIONS.filter((f) => f.tag === "mono").map(
-                            (f) => (
-                              <CommandItem
+                    <span className="min-w-0 truncate" style={{ fontFamily: selectedFont?.cssFamily }}>
+                      {selectedFont?.label ?? font}
+                    </span>
+                    <CaretDownIcon
+                      className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", fontPickerOpen && "rotate-180")}
+                      weight="bold"
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {fontPickerOpen && (
+                      <motion.div
+                        key="font-list"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
+                      >
+                        <div className="border-b border-border px-2 py-1.5">
+                          <input
+                            type="text"
+                            placeholder="Search fonts..."
+                            value={fontSearch}
+                            onChange={(e) => setFontSearch(e.target.value)}
+                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                            autoFocus={false}
+                          />
+                        </div>
+                        <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                          {(() => {
+                            const q = fontSearch.trim().toLowerCase()
+                            const filtered = q
+                              ? FONT_OPTIONS.filter(
+                                  (f) =>
+                                    f.label.toLowerCase().includes(q) ||
+                                    (f.tag ?? "").toLowerCase().includes(q)
+                                )
+                              : null
+
+                            const renderItem = (f: (typeof FONT_OPTIONS)[number]) => (
+                              <button
+                                type="button"
                                 key={f.id}
-                                value={f.id}
-                                keywords={[f.label]}
-                                data-checked={font === f.id ? true : undefined}
-                                onSelect={() => {
-                                  setFont(f.id)
-                                  setFontPickerOpen(false)
-                                }}
+                                onClick={() => { setFont(f.id); setFontPickerOpen(false); setFontSearch("") }}
+                                className={cn(
+                                  "flex w-full items-center rounded-md px-2 py-1.5 text-xs transition-colors text-left",
+                                  font === f.id
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
                               >
-                                <span style={{ fontFamily: f.cssFamily }}>
-                                  {f.label}
-                                </span>
-                              </CommandItem>
+                                <span style={{ fontFamily: f.cssFamily }}>{f.label}</span>
+                              </button>
                             )
-                          )}
-                        </CommandGroup>
-                        <CommandGroup heading="Display">
-                          {FONT_OPTIONS.filter((f) => f.tag === "display").map(
-                            (f) => (
-                              <CommandItem
-                                key={f.id}
-                                value={f.id}
-                                keywords={[f.label]}
-                                data-checked={font === f.id ? true : undefined}
-                                onSelect={() => {
-                                  setFont(f.id)
-                                  setFontPickerOpen(false)
-                                }}
-                              >
-                                <span style={{ fontFamily: f.cssFamily }}>
-                                  {f.label}
-                                </span>
-                              </CommandItem>
+
+                            if (filtered) {
+                              return filtered.length > 0 ? (
+                                filtered.map(renderItem)
+                              ) : (
+                                <p className="py-4 text-center text-xs text-muted-foreground">No fonts found</p>
+                              )
+                            }
+
+                            return (
+                              <>
+                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Mono</p>
+                                {FONT_OPTIONS.filter((f) => f.tag === "mono").map(renderItem)}
+                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Display</p>
+                                {FONT_OPTIONS.filter((f) => f.tag === "display").map(renderItem)}
+                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Serif</p>
+                                {FONT_OPTIONS.filter((f) => f.tag === "serif").map(renderItem)}
+                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Handwriting</p>
+                                {FONT_OPTIONS.filter((f) => f.tag === "handwriting").map(renderItem)}
+                              </>
                             )
-                          )}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                          })()}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </section>
 
               <section>
@@ -317,56 +359,73 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
               <section>
                 <SectionLabel>Language</SectionLabel>
-                <Popover open={langPickerOpen} onOpenChange={setLangPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      aria-expanded={langPickerOpen}
-                      className={cn(
-                        "mt-3 flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
-                        "hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                      )}
-                    >
-                      <span className="min-w-0 truncate">
-                        {selectedLang?.name ?? language}
-                      </span>
-                      <CaretDownIcon
-                        className="size-4 shrink-0 text-muted-foreground"
-                        weight="bold"
-                      />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="gap-0 p-0"
-                    align="end"
-                    side="bottom"
-                    sideOffset={8}
-                    style={{ width: "var(--radix-popover-trigger-width)" }}
+                {/* Inline accordion — avoids Popover portal which vaul intercepts on mobile */}
+                <div className="relative mt-3">
+                  <button
+                    type="button"
+                    onClick={() => { setLangPickerOpen((v) => !v); setLangSearch("") }}
+                    className={cn(
+                      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+                      "hover:bg-muted/50"
+                    )}
                   >
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          {languages.map((l) => (
-                            <CommandItem
-                              key={l.code}
-                              value={l.code}
-                              keywords={[l.name]}
-                              data-checked={
-                                language === l.code ? true : undefined
-                              }
-                              onSelect={() => {
-                                setLanguage(l.code)
-                                setLangPickerOpen(false)
-                              }}
-                            >
-                              {l.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                    <span className="min-w-0 truncate">{selectedLang?.name ?? language}</span>
+                    <CaretDownIcon
+                      className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", langPickerOpen && "rotate-180")}
+                      weight="bold"
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {langPickerOpen && (
+                      <motion.div
+                        key="lang-list"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
+                      >
+                        <div className="border-b border-border px-2 py-1.5">
+                          <input
+                            type="text"
+                            placeholder="Search languages..."
+                            value={langSearch}
+                            onChange={(e) => setLangSearch(e.target.value)}
+                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                            autoFocus={false}
+                          />
+                        </div>
+                        <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                          {(() => {
+                            const q = langSearch.trim().toLowerCase()
+                            const filtered = q
+                              ? languages.filter((l) => l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q))
+                              : languages
+                            return filtered.length > 0 ? (
+                              filtered.map((l) => (
+                                <button
+                                  type="button"
+                                  key={l.code}
+                                  onClick={() => { setLanguage(l.code); setLangPickerOpen(false); setLangSearch("") }}
+                                  className={cn(
+                                    "flex w-full items-center rounded-md px-2 py-1.5 text-xs text-left transition-colors",
+                                    language === l.code
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  )}
+                                >
+                                  {l.name}
+                                </button>
+                              ))
+                            ) : (
+                              <p className="py-4 text-center text-xs text-muted-foreground">No languages found</p>
+                            )
+                          })()}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </section>
 
               <section>

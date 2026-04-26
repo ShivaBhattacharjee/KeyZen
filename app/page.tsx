@@ -13,7 +13,8 @@ export default function Page() {
   const [isFinished, setIsFinished] = useState(false)
   const [typingFocused, setTypingFocused] = useState(true)
   const [restartKey, setRestartKey] = useState(0)
-  const { showKeyboard, soundEnabled, soundPack, language } = useSettings()
+  const [mode, setMode] = useState<string>("time")
+  const { showKeyboard, soundEnabled, soundPack, language, setSoundPackLoading } = useSettings()
   const soundPackOption = SOUND_PACKS.find((s) => s.id === soundPack)
   const soundUrl = soundPackOption?.url ?? "/sounds/sound.ogg"
   const soundConfigUrl = soundPackOption?.configUrl
@@ -40,7 +41,7 @@ export default function Page() {
   const showFooter = !isFinished && showKeyboard
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col overflow-hidden">
       <main
         className={cn(
           "flex flex-col px-6",
@@ -57,6 +58,7 @@ export default function Page() {
           onFinished={setIsFinished}
           onTypingActiveChange={handleTypingActiveChange}
           onFocusChange={setTypingFocused}
+          onModeChange={setMode}
           pauseTypingInputRefocus={settingsOpen || testSettingsOpen}
         />
       </main>
@@ -80,6 +82,7 @@ export default function Page() {
               forceActive={soundEnabled && !showKeyboard}
               physicalKeysEnabled={typingFocused}
               language={language}
+              onAudioLoadingChange={setSoundPackLoading}
             />
           </div>
         </footer>

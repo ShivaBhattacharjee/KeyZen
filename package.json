@@ -13,6 +13,7 @@
     "postinstall": "node -e \"const fs=require('fs');const raw=fs.readFileSync('./node_modules/inspirational-quotes/data/data.json','utf8');fs.mkdirSync('./data',{recursive:true});fs.writeFileSync('./data/quotes.json',JSON.stringify(JSON.parse(raw.replace(/^\\uFEFF/,''))));\" && node scripts/generate-code-data.mjs"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@next/third-parties": "^16.2.3",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-use-controllable-state": "^1.2.2",

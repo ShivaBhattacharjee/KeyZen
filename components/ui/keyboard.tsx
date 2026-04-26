@@ -69,6 +69,8 @@ export interface KeyboardProps {
   physicalKeysEnabled?: boolean;
   /** Language code to determine key labels (e.g. "english", "french", "russian") */
   language?: string;
+  /** Callback fired when audio files start or stop loading */
+  onAudioLoadingChange?: (isLoading: boolean) => void;
 }
 
 export function Keyboard({
@@ -82,6 +84,7 @@ export function Keyboard({
   forceActive = false,
   physicalKeysEnabled = true,
   language = "english",
+  onAudioLoadingChange,
 }: KeyboardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layout = useMemo(() => getKeyboardLayout(language), [language]);
@@ -98,6 +101,7 @@ export function Keyboard({
       forceActive={forceActive}
       physicalKeysEnabled={physicalKeysEnabled}
       layout={layout}
+      onAudioLoadingChange={onAudioLoadingChange}
     >
       <div ref={containerRef} className={cn("inline-block", className)}>
         <KeyboardKeys />
@@ -157,6 +161,7 @@ interface KeyboardProviderProps {
   forceActive?: boolean;
   physicalKeysEnabled?: boolean;
   layout: KeyboardLayout;
+  onAudioLoadingChange?: (isLoading: boolean) => void;
 }
 
 type PackKeyDef =
@@ -185,6 +190,7 @@ function KeyboardProvider({
   forceActive = false,
   physicalKeysEnabled = true,
   layout,
+  onAudioLoadingChange,
 }: KeyboardProviderProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
@@ -207,6 +213,7 @@ function KeyboardProvider({
     let cancelled = false;
 
     const initAudio = async () => {
+      onAudioLoadingChange?.(true);
       try {
         const audioContext = new AudioContext();
         audioContextRef.current = audioContext;
@@ -232,6 +239,7 @@ function KeyboardProvider({
 
         const [spriteBuffer, rawConfig] = await Promise.all([spriteBufferPromise, fetchConfig]);
         if (cancelled) {
+          onAudioLoadingChange?.(false);
           return;
         }
 
@@ -241,6 +249,7 @@ function KeyboardProvider({
 
         if (!rawConfig) {
           soundPackRef.current = null;
+          onAudioLoadingChange?.(false);
           return;
         }
 
@@ -250,6 +259,10 @@ function KeyboardProvider({
         }
       } catch {
         toast.error("Failed to load keyboard sounds. Check your network connection and try again.");
+      } finally {
+        if (!cancelled) {
+          onAudioLoadingChange?.(false);
+        }
       }
     };
 

@@ -28,9 +28,9 @@ export const SOUND_PACKS: SoundPackOption[] = [
 export type AccentColor = | "teal" | "red" | "amber" | "purple" | "green" | "rose" | "blue" | "orange" | "cyan" | "pink" | "indigo" | "lime" | "violet" | "lightgreen" | "sky" | "coral" | "mint" | "gold" | "lavender";
 export type TypingFont =
   // Mono
-  | "geist-mono" | "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "roboto-mono" | "space-mono" | "inconsolata" | "cascadia-code" | "0xproto" | "overpass-mono" | "ubuntu-mono" | "oxygen-mono" | "courier-prime" | "victor-mono" | "hack" | "share-tech-mono"
+  | "geist-mono" | "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "roboto-mono" | "space-mono" | "inconsolata" | "cascadia-code" | "0xproto" | "overpass-mono" | "ubuntu-mono" | "oxygen-mono" | "courier-prime" | "victor-mono" | "hack" | "share-tech-mono" | "fira-mono" | "pt-mono" | "anonymous-pro" | "cousine" | "cutive-mono"
   // Display / Sans / Serif
-  | "atkinson-hyperlegible" | "comfortaa" | "coming-soon" | "geist-sans" | "ibm-plex-sans" | "inter-tight" | "itim" | "kanit" | "lalezar" | "lato" | "lexend-deca" | "montserrat" | "nunito" | "oxygen" | "parkinsans" | "roboto" | "sarabun" | "space-grotesk" | "titillium-web" | "ubuntu" | "georgia" | "helvetica" | "poppins" | "outfit" | "dm-sans" | "inter" | "playfair-display" | "merriweather" | "bebas-neue";
+  | "atkinson-hyperlegible" | "comfortaa" | "coming-soon" | "geist-sans" | "ibm-plex-sans" | "inter-tight" | "itim" | "kanit" | "lalezar" | "lato" | "lexend-deca" | "montserrat" | "nunito" | "oxygen" | "parkinsans" | "roboto" | "sarabun" | "space-grotesk" | "titillium-web" | "ubuntu" | "georgia" | "helvetica" | "poppins" | "outfit" | "dm-sans" | "inter" | "playfair-display" | "merriweather" | "bebas-neue" | "raleway" | "lora" | "oswald" | "rubik" | "noto-sans" | "caveat" | "pacifico" | "quicksand" | "work-sans" | "josefin-sans" | "archivo" | "manrope" | "sora" | "syne" | "arvo" | "bitter" | "libre-baskerville" | "karla" | "public-sans";
 
 export interface FontOption {
   id: TypingFont;
@@ -59,6 +59,11 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "victor-mono",            label: "Victor Mono",            googleFamily: "Victor+Mono:wght@400;500;700",        cssFamily: "'Victor Mono'",            tag: "mono" },
   { id: "hack",                   label: "Hack",                   googleFamily: "Hack",                                cssFamily: "'Hack', monospace",        tag: "mono" },
   { id: "share-tech-mono",        label: "Share Tech Mono",        googleFamily: "Share+Tech+Mono",                     cssFamily: "'Share Tech Mono'",        tag: "mono" },
+  { id: "fira-mono",              label: "Fira Mono",              googleFamily: "Fira+Mono:wght@400;500;700",          cssFamily: "'Fira Mono'",              tag: "mono" },
+  { id: "pt-mono",                label: "PT Mono",                googleFamily: "PT+Mono",                             cssFamily: "'PT Mono'",                tag: "mono" },
+  { id: "anonymous-pro",          label: "Anonymous Pro",          googleFamily: "Anonymous+Pro:wght@400;700",          cssFamily: "'Anonymous Pro'",          tag: "mono" },
+  { id: "cousine",                label: "Cousine",                googleFamily: "Cousine:wght@400;700",                cssFamily: "'Cousine'",                tag: "mono" },
+  { id: "cutive-mono",            label: "Cutive Mono",            googleFamily: "Cutive+Mono",                         cssFamily: "'Cutive Mono'",            tag: "mono" },
   // ── Display / Sans / Serif ────────────────────────────────────────────────
   { id: "atkinson-hyperlegible",  label: "Atkinson Hyperlegible",  googleFamily: "Atkinson+Hyperlegible:wght@400;700",  cssFamily: "'Atkinson Hyperlegible'",  tag: "display" },
   { id: "comfortaa",              label: "Comfortaa",              googleFamily: "Comfortaa:wght@400;500;700",          cssFamily: "'Comfortaa'",              tag: "display" },
@@ -89,6 +94,25 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "playfair-display",       label: "Playfair Display",       googleFamily: "Playfair+Display:wght@400;500;700",   cssFamily: "'Playfair Display'",       tag: "display" },
   { id: "merriweather",           label: "Merriweather",           googleFamily: "Merriweather:wght@400;700",           cssFamily: "'Merriweather'",           tag: "display" },
   { id: "bebas-neue",             label: "Bebas Neue",             googleFamily: "Bebas+Neue",                          cssFamily: "'Bebas Neue'",             tag: "display" },
+  { id: "raleway",                label: "Raleway",                googleFamily: "Raleway:wght@400;500;700",            cssFamily: "'Raleway'",                tag: "display" },
+  { id: "lora",                   label: "Lora",                   googleFamily: "Lora:wght@400;500;700",               cssFamily: "'Lora'",                   tag: "display" },
+  { id: "oswald",                 label: "Oswald",                 googleFamily: "Oswald:wght@400;500;700",             cssFamily: "'Oswald'",                 tag: "display" },
+  { id: "rubik",                  label: "Rubik",                  googleFamily: "Rubik:wght@400;500;700",              cssFamily: "'Rubik'",                  tag: "display" },
+  { id: "noto-sans",              label: "Noto Sans",              googleFamily: "Noto+Sans:wght@400;500;700",          cssFamily: "'Noto Sans'",              tag: "display" },
+  { id: "caveat",                 label: "Caveat",                 googleFamily: "Caveat:wght@400;500;700",             cssFamily: "'Caveat'",                 tag: "display" },
+  { id: "pacifico",               label: "Pacifico",               googleFamily: "Pacifico",                            cssFamily: "'Pacifico'",               tag: "display" },
+  { id: "quicksand",              label: "Quicksand",              googleFamily: "Quicksand:wght@400;500;700",          cssFamily: "'Quicksand'",              tag: "display" },
+  { id: "work-sans",              label: "Work Sans",              googleFamily: "Work+Sans:wght@400;500;700",          cssFamily: "'Work Sans'",              tag: "display" },
+  { id: "josefin-sans",           label: "Josefin Sans",           googleFamily: "Josefin+Sans:wght@400;500;700",        cssFamily: "'Josefin Sans'",           tag: "display" },
+  { id: "archivo",                label: "Archivo",                googleFamily: "Archivo:wght@400;500;700",             cssFamily: "'Archivo'",                tag: "display" },
+  { id: "manrope",                label: "Manrope",                googleFamily: "Manrope:wght@400;500;700",             cssFamily: "'Manrope'",                tag: "display" },
+  { id: "sora",                   label: "Sora",                   googleFamily: "Sora:wght@400;500;700",                cssFamily: "'Sora'",                   tag: "display" },
+  { id: "syne",                   label: "Syne",                   googleFamily: "Syne:wght@400;500;700;800",           cssFamily: "'Syne'",                   tag: "display" },
+  { id: "arvo",                   label: "Arvo",                   googleFamily: "Arvo:wght@400;700",                   cssFamily: "'Arvo'",                   tag: "display" },
+  { id: "bitter",                 label: "Bitter",                 googleFamily: "Bitter:wght@400;500;700",             cssFamily: "'Bitter'",                 tag: "display" },
+  { id: "libre-baskerville",      label: "Libre Baskerville",      googleFamily: "Libre+Baskerville:wght@400;700",      cssFamily: "'Libre Baskerville'",      tag: "display" },
+  { id: "karla",                  label: "Karla",                  googleFamily: "Karla:wght@400;500;700",               cssFamily: "'Karla'",                  tag: "display" },
+  { id: "public-sans",            label: "Public Sans",            googleFamily: "Public+Sans:wght@400;500;700",        cssFamily: "'Public Sans'",            tag: "display" },
 ];
 
 export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[] =

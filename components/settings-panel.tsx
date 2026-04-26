@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "motion/react"
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
 import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS, } from "@/components/settings-context"
 import { NextThemeSwitcher } from "@/components/kibo-ui/theme-switcher"
-import { Command, CommandGroup, CommandItem, CommandList, } from "@/components/ui/command"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
@@ -242,14 +242,17 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                     sideOffset={8}
                     style={{ width: "var(--radix-popover-trigger-width)" }}
                   >
-                    <Command shouldFilter={false}>
+                    <Command>
+                      <CommandInput placeholder="Search fonts..." />
                       <CommandList>
+                        <CommandEmpty>No font found.</CommandEmpty>
                         <CommandGroup heading="Mono">
                           {FONT_OPTIONS.filter((f) => f.tag === "mono").map(
                             (f) => (
                               <CommandItem
                                 key={f.id}
                                 value={f.id}
+                                keywords={[f.label]}
                                 data-checked={font === f.id ? true : undefined}
                                 onSelect={() => {
                                   setFont(f.id)
@@ -269,6 +272,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                               <CommandItem
                                 key={f.id}
                                 value={f.id}
+                                keywords={[f.label]}
                                 data-checked={font === f.id ? true : undefined}
                                 onSelect={() => {
                                   setFont(f.id)

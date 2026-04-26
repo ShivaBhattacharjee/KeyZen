@@ -36,7 +36,7 @@ export interface TestControlsProps {
   onPunctuationToggle: () => void;
   onNumbersToggle: () => void;
   onDifficultyToggle: (d: Difficulty) => void;
-  onCustomTextChange: (next: string) => void;
+  onCustomTextChange: (next: string, codeLanguage?: string) => void;
   onCodeLanguageChange: (lang: string) => void;
   onCodeChapterChange: (chapter: string) => void;
   onRestart: () => void;
@@ -138,39 +138,42 @@ export function TestControls({
 
   const settingsContent = (
     <div className="flex flex-col gap-5 px-4 pb-8 pt-2">
-      {/* Toggles group */}
-      <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Toggles</span>
-        <div className="grid grid-cols-3 gap-2">
-          <button type="button" onClick={onPunctuationToggle} className={drawerBtnClass(punctuation)}>
-            <IconAt size={18} />
-            <span>punctuation</span>
-          </button>
-          <button type="button" onClick={onNumbersToggle} className={drawerBtnClass(numbers)}>
-            <IconNumber size={18} />
-            <span>numbers</span>
-          </button>
-        </div>
-      </div>
+      {/* Toggles + Difficulty — hidden in code and custom mode */}
+      {mode !== "code" && mode !== "custom" && (
+        <>
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Toggles</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={onPunctuationToggle} className={drawerBtnClass(punctuation)}>
+                <IconAt size={18} />
+                <span>punctuation</span>
+              </button>
+              <button type="button" onClick={onNumbersToggle} className={drawerBtnClass(numbers)}>
+                <IconNumber size={18} />
+                <span>numbers</span>
+              </button>
+            </div>
+          </div>
 
-      <div className="h-px w-full bg-border" />
+          <div className="h-px w-full bg-border" />
 
-      {/* Difficulty group */}
-      <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Difficulty</span>
-        <div className="grid grid-cols-3 gap-2">
-          <button type="button" onClick={() => onDifficultyToggle("easy")} className={drawerBtnClass(difficulty === "easy")}>
-            <IconFeather size={18} />
-            <span>easy</span>
-          </button>
-          <button type="button" onClick={() => onDifficultyToggle("hard")} className={drawerBtnClass(difficulty === "hard")}>
-            <IconFlame size={18} />
-            <span>hard</span>
-          </button>
-        </div>
-      </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Difficulty</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => onDifficultyToggle("easy")} className={drawerBtnClass(difficulty === "easy")}>
+                <IconFeather size={18} />
+                <span>easy</span>
+              </button>
+              <button type="button" onClick={() => onDifficultyToggle("hard")} className={drawerBtnClass(difficulty === "hard")}>
+                <IconFlame size={18} />
+                <span>hard</span>
+              </button>
+            </div>
+          </div>
 
-      <div className="h-px w-full bg-border" />
+          <div className="h-px w-full bg-border" />
+        </>
+      )}
 
       {/* Mode group */}
       <div className="flex flex-col gap-2">
@@ -236,6 +239,7 @@ export function TestControls({
               <CustomTextDialog
                 value={customText}
                 onSave={onCustomTextChange}
+                codeManifest={codeManifest}
                 trigger={
                   <button
                     type="button"
@@ -305,28 +309,32 @@ export function TestControls({
       >
         {/* Desktop / large screen controls */}
         <div className="hidden lg:flex items-center justify-center gap-2 mt-6 whitespace-nowrap">
-          {/* Toggles: punctuation / numbers / difficulty */}
-          <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
-            <button type="button" onClick={onPunctuationToggle} className={btnClass(punctuation)}>
-              <IconAt size={14} />
-              punctuation
-            </button>
-            <button type="button" onClick={onNumbersToggle} className={btnClass(numbers)}>
-              <IconNumber size={14} />
-              numbers
-            </button>
-            <div className="h-4 w-px shrink-0 bg-border" />
-            <button type="button" onClick={() => onDifficultyToggle("easy")} className={btnClass(difficulty === "easy")}>
-              <IconFeather size={14} />
-              easy
-            </button>
-            <button type="button" onClick={() => onDifficultyToggle("hard")} className={btnClass(difficulty === "hard")}>
-              <IconFlame size={14} />
-              hard
-            </button>
-          </div>
+          {/* Toggles: punctuation / numbers / difficulty — hidden in code mode */}
+          {mode !== "code" && mode !== "custom" && (
+            <>
+              <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
+                <button type="button" onClick={onPunctuationToggle} className={btnClass(punctuation)}>
+                  <IconAt size={14} />
+                  punctuation
+                </button>
+                <button type="button" onClick={onNumbersToggle} className={btnClass(numbers)}>
+                  <IconNumber size={14} />
+                  numbers
+                </button>
+                <div className="h-4 w-px shrink-0 bg-border" />
+                <button type="button" onClick={() => onDifficultyToggle("easy")} className={btnClass(difficulty === "easy")}>
+                  <IconFeather size={14} />
+                  easy
+                </button>
+                <button type="button" onClick={() => onDifficultyToggle("hard")} className={btnClass(difficulty === "hard")}>
+                  <IconFlame size={14} />
+                  hard
+                </button>
+              </div>
 
-          <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+              <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+            </>
+          )}
 
           {/* Mode tabs */}
           <Tabs value={mode} onValueChange={(v) => onModeChange(v as TestMode)} className="flex items-center">
@@ -372,6 +380,7 @@ export function TestControls({
                   <CustomTextDialog
                     value={customText}
                     onSave={onCustomTextChange}
+                    codeManifest={codeManifest}
                     trigger={
                       <button
                         type="button"

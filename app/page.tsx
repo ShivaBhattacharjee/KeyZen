@@ -38,11 +38,8 @@ export default function Page() {
 
   const handleKeyHighlight = useCallback((_key: string | null) => {}, [])
 
-  const isCodeMode = mode === "code"
   const showFooter = !isFinished && showKeyboard
 
-  // In code mode with keyboard visible: main takes only what it needs (no justify-center),
-  // keyboard footer takes the rest — both fit in 100dvh with no scroll.
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <main
@@ -50,11 +47,9 @@ export default function Page() {
           "flex flex-col px-6",
           isFinished
             ? "flex-1 justify-center px-10 py-2"
-            : isCodeMode
-              ? "flex-1 items-center overflow-hidden"
-              : showFooter
-                ? "flex-1 items-center justify-center lg:justify-end lg:pb-8"
-                : "flex-1 items-center justify-center",
+            : showFooter
+              ? "flex-1 items-center justify-center lg:justify-end lg:pb-8"
+              : "flex-1 items-center justify-center",
         )}
       >
         <TypingTest
@@ -73,7 +68,7 @@ export default function Page() {
           className={cn(
             "hidden items-center justify-center border-t border-border lg:flex",
             showKeyboard
-              ? isCodeMode ? "flex-1 flex-col" : "flex-1 flex-col"
+              ? "flex-1 flex-col"
               : "invisible h-0 overflow-hidden border-0",
           )}
         >

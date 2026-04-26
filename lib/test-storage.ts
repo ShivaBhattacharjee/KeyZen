@@ -16,6 +16,7 @@ export const CUSTOM_TEXT_STORAGE_KEY = "tc-custom-text"
 export const CODE_LANGUAGE_STORAGE_KEY = "tc-code-language"
 export const CODE_CHAPTER_STORAGE_KEY = "tc-code-chapter"
 export const CODE_EXT_STORAGE_KEY = "tc-code-ext"
+export const CUSTOM_CODE_LANGUAGE_STORAGE_KEY = "tc-custom-code-language"
 
 export const DEFAULT_CUSTOM_TEXT =
   "Never gonna give you up, never gonna let you down Never gonna run around and desert you Never gonna make you cry, never gonna say goodbye Never gonna tell a lie and hurt you"
@@ -105,4 +106,9 @@ export function readStoredCodeChapter(): string | undefined {
 export function readStoredCodeExt(): string | undefined {
   if (!isBrowser()) return undefined
   return localStorage.getItem(CODE_EXT_STORAGE_KEY) || undefined
+}
+
+export function readStoredCustomCodeLanguage(): string | undefined {
+  if (!isBrowser()) return undefined
+  return localStorage.getItem(CUSTOM_CODE_LANGUAGE_STORAGE_KEY) || undefined
 }

@@ -22,7 +22,7 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const {
-    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair,
+    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers,
   } = useSettings()
   const isRTL = isRTLLanguage(language)
   const [isMobile, setIsMobile] = useState(false)
@@ -187,6 +187,11 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   label="Auto pair"
                   enabled={autoPair}
                   onToggle={() => setAutoPair(!autoPair)}
+                />
+                <ToggleRow
+                  label="Line numbers"
+                  enabled={showLineNumbers}
+                  onToggle={() => setShowLineNumbers(!showLineNumbers)}
                 />
                 {isRTL && (
                   <ToggleRow

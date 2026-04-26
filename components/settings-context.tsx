@@ -126,6 +126,8 @@ interface SettingsContextType {
   setSyntaxHighlighting: (v: boolean) => void;
   autoPair: boolean;
   setAutoPair: (v: boolean) => void;
+  showLineNumbers: boolean;
+  setShowLineNumbers: (v: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -168,6 +170,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [fontSize, setFontSizeState] = useState<FontSize>("md");
   const [syntaxHighlighting, setSyntaxHighlightingState] = useState(true);
   const [autoPair, setAutoPairState] = useState(true);
+  const [showLineNumbers, setShowLineNumbersState] = useState(true);
 
   // Rule 4: one-time hydration from localStorage on mount, applying DOM side
   // effects inline here instead of in separate reactive useEffects.
@@ -216,6 +219,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const savedAutoPair = localStorage.getItem("tc-auto-pair");
     if (savedAutoPair !== null) setAutoPairState(savedAutoPair !== "false");
+
+    const savedShowLineNumbers = localStorage.getItem("tc-show-line-numbers");
+    if (savedShowLineNumbers !== null) setShowLineNumbersState(savedShowLineNumbers !== "false");
   });
 
   // Rule 3: setAccent / setFont are event handlers that apply DOM changes
@@ -297,6 +303,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("tc-auto-pair", String(v));
   };
 
+  const setShowLineNumbers = (v: boolean) => {
+    setShowLineNumbersState(v);
+    localStorage.setItem("tc-show-line-numbers", String(v));
+  };
+
   const fontCssFamily =
     FONT_OPTIONS.find((f) => f.id === font)?.cssFamily ?? "var(--font-mono)";
 
@@ -318,6 +329,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         fontSize, setFontSize,
         syntaxHighlighting, setSyntaxHighlighting,
         autoPair, setAutoPair,
+        showLineNumbers, setShowLineNumbers,
       }}
     >
       {children}

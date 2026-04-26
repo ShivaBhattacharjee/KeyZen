@@ -23,7 +23,7 @@ interface TypingTestProps {
 }
 
 export function TypingTest(props: TypingTestProps) {
-  const { realtimeWpm, faahMode, ghostMode, shakeMode, fontSize, syntaxHighlighting, showKeyboard } = useSettings()
+  const { realtimeWpm, faahMode, ghostMode, shakeMode, fontSize, syntaxHighlighting, showKeyboard, showLineNumbers } = useSettings()
   const { resolvedTheme } = useTheme()
   const fontSizeRem = { xs: "1rem", sm: "1.25rem", md: "1.5rem", lg: "1.875rem", xl: "2.25rem" }[fontSize]
   const faahAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -60,6 +60,7 @@ export function TypingTest(props: TypingTestProps) {
     numbers,
     difficulty,
     customText,
+    customCodeLanguage,
     codeLanguage,
     codeChapter,
     codeLoading,
@@ -117,10 +118,13 @@ export function TypingTest(props: TypingTestProps) {
     ? getCodeContent(codeLanguage, codeChapter)
     : undefined
 
+  const isCodeRendering = (mode === "code" || (mode === "custom" && codeLines.length > 0))
+  const shikiLang = mode === "custom" ? customCodeLanguage : codeLanguage
+
   const shikiColors = useShikiTokens(
     words,
-    codeLanguage,
-    mode === "code" && syntaxHighlighting,
+    shikiLang,
+    isCodeRendering && syntaxHighlighting,
     resolvedTheme ?? "dark",
     rawCode,
   )
@@ -260,19 +264,12 @@ export function TypingTest(props: TypingTestProps) {
           ref={wordsContainerRef}
           className={cn(
             "relative w-full overflow-hidden leading-relaxed",
-            mode !== "code" && "h-[7.8rem]",
+            "h-[7.8rem]",
             isActivelyTyping && "is-typing"
           )}
           style={{
             fontFamily: "var(--typing-font)",
             fontSize: fontSizeRem,
-            // In code mode: fill all remaining viewport space minus fixed chrome.
-            // ~260px covers header + controls + timer row + restart + hint.
-            // When keyboard is visible add ~320px more for the footer.
-            ...(mode === "code" && {
-              height: `calc(100dvh - ${showKeyboard ? "580px" : "260px"})`,
-              minHeight: "8rem",
-            }),
           }}
         >
           <input
@@ -297,14 +294,14 @@ export function TypingTest(props: TypingTestProps) {
           )}
 
           {/* Bottom fade */}
-          {mode === "code" && (
+          {isCodeRendering && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t from-background to-transparent" />
           )}
 
           <LayoutGroup id="words">
             <motion.div
               className={cn(
-                mode === "code" ? "flex flex-col gap-y-1" : "flex flex-wrap gap-x-2.5 gap-y-1"
+                isCodeRendering ? "flex flex-col gap-y-1" : "flex flex-wrap gap-x-2.5 gap-y-1"
               )}
               dir={isRTL ? "rtl" : undefined}
               animate={{
@@ -318,7 +315,7 @@ export function TypingTest(props: TypingTestProps) {
                   : { type: "spring", stiffness: 300, damping: 30, mass: 0.8 }
               }
             >
-              {mode === "code" && codeLines.length > 0 ? (() => {
+              {isCodeRendering && codeLines.length > 0 ? (() => {
                 // Compute which line the active word is on
                 let activeLine = 0
                 let wCount = 0
@@ -364,14 +361,16 @@ export function TypingTest(props: TypingTestProps) {
                   lineElements.push(
                     <div key={lineIdx} className="flex flex-row items-baseline gap-x-4">
                       {/* Line number */}
-                      <span
-                        className={cn(
-                          "w-8 shrink-0 select-none text-right font-mono text-[0.7em] tabular-nums transition-colors duration-100",
-                          isActiveLine ? "text-primary" : "text-muted-foreground/30"
-                        )}
-                      >
-                        {lineIdx + 1}
-                      </span>
+                      {showLineNumbers && (
+                        <span
+                          className={cn(
+                            "w-8 shrink-0 select-none text-right font-mono text-[0.7em] tabular-nums transition-colors duration-100",
+                            isActiveLine ? "text-primary" : "text-muted-foreground/30"
+                          )}
+                        >
+                          {lineIdx + 1}
+                        </span>
+                      )}
                       {/* Indentation spacer + line words */}
                       <div className="flex flex-row gap-x-2.5" style={{ paddingLeft: indent > 0 ? `${indent * 2}ch` : undefined }}>
                         {lineWords}
@@ -410,7 +409,7 @@ export function TypingTest(props: TypingTestProps) {
                     elemRef={isActive ? activeWordRef : undefined}
                     dimmed={dimmed}
                     isRTL={isRTL}
-                    tokenColors={mode === "code" && syntaxHighlighting ? shikiColors[wIdx] : undefined}
+                    tokenColors={isCodeRendering && syntaxHighlighting ? shikiColors[wIdx] : undefined}
                   />
                 )
               })}

@@ -35,6 +35,43 @@ async function ensureLang(lang: string) {
   loadedLangs.add(shikiLang);
 }
 
+/** Returns shiki-highlighted HTML for a full code string. */
+export function useHighlightedHtml(
+  code: string,
+  lang: string,
+  enabled: boolean,
+  theme: string,
+): string {
+  const [html, setHtml] = useState<string>("");
+  const prevKey = useRef("");
+
+  useEffect(() => {
+    if (!enabled || !code || !lang) {
+      prevKey.current = "";
+      setHtml("");
+      return;
+    }
+
+    const key = `${lang}:${theme}:${code}`;
+    if (key === prevKey.current) return;
+    prevKey.current = key;
+
+    let cancelled = false;
+    (async () => {
+      await ensureLang(lang);
+      const h = await getHighlighter();
+      const shikiLang = LANG_MAP[lang] ?? "text";
+      const shikiTheme = theme === "dark" ? "vitesse-dark" : "vitesse-light";
+      const result = h.codeToHtml(code, { lang: shikiLang, theme: shikiTheme });
+      if (!cancelled) setHtml(result);
+    })();
+
+    return () => { cancelled = true; };
+  }, [code, lang, enabled, theme]);
+
+  return html;
+}
+
 /** Tokenizes words and returns per-word arrays of per-character hex colors.
  *  Pass `rawCode` (the original source) for accurate context-aware highlighting.
  *  Falls back to joining words with newlines if rawCode is not provided.

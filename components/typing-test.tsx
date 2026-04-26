@@ -90,6 +90,8 @@ export function TypingTest(props: TypingTestProps) {
     handleFocus,
     handleInputBlur,
     handleInputFocus,
+    handleCompositionStart,
+    handleCompositionEnd,
     handleMouseMove,
     handleResultsRestart,
     handleResultsNext,
@@ -277,6 +279,8 @@ export function TypingTest(props: TypingTestProps) {
             ref={inputRef}
             className="absolute opacity-0"
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             onBlur={handleInputBlur}
             onFocus={handleInputFocus}
             value={typed}

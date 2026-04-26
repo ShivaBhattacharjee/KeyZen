@@ -120,6 +120,7 @@ export function useTypingTest({
   const activeWordRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tabPressedRef = useRef(false);
+  const isComposingRef = useRef(false);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const screenFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -440,6 +441,18 @@ export function useTypingTest({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // IME / dead-key composition (e.g. macOS AZERTY ^ + e → ê).
+      // Skip the keydowns the browser fires during composition — the final
+      // composed character is delivered via compositionend instead.
+      if (
+        isComposingRef.current ||
+        e.nativeEvent.isComposing ||
+        e.key === "Dead" ||
+        e.key === "Process"
+      ) {
+        return;
+      }
+
       const isAltWordDelete = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey &&
         (e.key === "Backspace" || e.key === "Delete");
       const isCtrlBackspaceWordNav = e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey && e.key === "Backspace";
@@ -698,6 +711,38 @@ export function useTypingTest({
     onFocusChange?.(true);
   }, [onFocusChange]);
 
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(
+    (e: React.CompositionEvent<HTMLInputElement>) => {
+      isComposingRef.current = false;
+      const data = e.data;
+      // Re-sync the controlled input — during composition the browser may have
+      // written into the DOM input value; React won't reset it because onChange
+      // is a no-op. Without this, the next dead-key composition can produce
+      // duplicated characters in the DOM input.
+      if (inputRef.current && inputRef.current.value !== typed) {
+        inputRef.current.value = typed;
+      }
+      if (!data) return;
+      // Replay each composed character through the same keydown logic.
+      for (const ch of data) {
+        handleKeyDown({
+          key: ch,
+          altKey: false,
+          ctrlKey: false,
+          metaKey: false,
+          shiftKey: false,
+          preventDefault: () => {},
+          nativeEvent: { isComposing: false } as unknown as KeyboardEvent,
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
+      }
+    },
+    [handleKeyDown, typed],
+  );
+
   // ── Frozen stats (computed inline, not via effect) ────────────────────────
   const frozenStatsRef = useRef<ResultStats | null>(null);
 
@@ -893,6 +938,7 @@ const onCodeLanguageChange = useCallback((next: string) => {
     inputRef, wordsContainerRef, activeWordRef,
     // Handlers
     handleKeyDown, handleFocus, handleInputBlur, handleInputFocus,
+    handleCompositionStart, handleCompositionEnd,
     handleMouseMove, handleResultsRestart, handleResultsNext,
     onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
     onPunctuationToggle, onNumbersToggle, onDifficultyToggle,

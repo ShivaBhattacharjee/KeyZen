@@ -28,9 +28,9 @@ export const SOUND_PACKS: SoundPackOption[] = [
 export type AccentColor = | "teal" | "red" | "amber" | "purple" | "green" | "rose" | "blue" | "orange" | "cyan" | "pink" | "indigo" | "lime" | "violet" | "lightgreen" | "sky" | "coral" | "mint" | "gold" | "lavender";
 export type TypingFont =
   // Mono
-  | "geist-mono" | "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "roboto-mono" | "space-mono" | "inconsolata" | "cascadia-code" | "0xproto" | "overpass-mono" | "ubuntu-mono" | "oxygen-mono" | "courier-prime"
+  | "geist-mono" | "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "roboto-mono" | "space-mono" | "inconsolata" | "cascadia-code" | "0xproto" | "overpass-mono" | "ubuntu-mono" | "oxygen-mono" | "courier-prime" | "victor-mono" | "hack" | "share-tech-mono"
   // Display / Sans / Serif
-  | "atkinson-hyperlegible" | "comfortaa" | "coming-soon" | "geist-sans" | "ibm-plex-sans" | "inter-tight" | "itim" | "kanit" | "lalezar" | "lato" | "lexend-deca" | "montserrat" | "nunito" | "oxygen" | "parkinsans" | "roboto" | "sarabun" | "space-grotesk" | "titillium-web" | "ubuntu" | "georgia" | "helvetica";
+  | "atkinson-hyperlegible" | "comfortaa" | "coming-soon" | "geist-sans" | "ibm-plex-sans" | "inter-tight" | "itim" | "kanit" | "lalezar" | "lato" | "lexend-deca" | "montserrat" | "nunito" | "oxygen" | "parkinsans" | "roboto" | "sarabun" | "space-grotesk" | "titillium-web" | "ubuntu" | "georgia" | "helvetica" | "poppins" | "outfit" | "dm-sans" | "inter" | "playfair-display" | "merriweather" | "bebas-neue";
 
 export interface FontOption {
   id: TypingFont;
@@ -56,6 +56,9 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "ubuntu-mono",            label: "Ubuntu Mono",            googleFamily: "Ubuntu+Mono:wght@400;700",            cssFamily: "'Ubuntu Mono'",            tag: "mono" },
   { id: "oxygen-mono",            label: "Oxygen Mono",            googleFamily: "Oxygen+Mono",                         cssFamily: "'Oxygen Mono'",            tag: "mono" },
   { id: "courier-prime",          label: "Courier Prime",          googleFamily: "Courier+Prime:wght@400;700",          cssFamily: "'Courier Prime'",          tag: "mono" },
+  { id: "victor-mono",            label: "Victor Mono",            googleFamily: "Victor+Mono:wght@400;500;700",        cssFamily: "'Victor Mono'",            tag: "mono" },
+  { id: "hack",                   label: "Hack",                   googleFamily: "Hack",                                cssFamily: "'Hack', monospace",        tag: "mono" },
+  { id: "share-tech-mono",        label: "Share Tech Mono",        googleFamily: "Share+Tech+Mono",                     cssFamily: "'Share Tech Mono'",        tag: "mono" },
   // ── Display / Sans / Serif ────────────────────────────────────────────────
   { id: "atkinson-hyperlegible",  label: "Atkinson Hyperlegible",  googleFamily: "Atkinson+Hyperlegible:wght@400;700",  cssFamily: "'Atkinson Hyperlegible'",  tag: "display" },
   { id: "comfortaa",              label: "Comfortaa",              googleFamily: "Comfortaa:wght@400;500;700",          cssFamily: "'Comfortaa'",              tag: "display" },
@@ -79,6 +82,13 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "ubuntu",                 label: "Ubuntu",                 googleFamily: "Ubuntu:wght@400;500;700",             cssFamily: "'Ubuntu'",                 tag: "display" },
   { id: "georgia",                label: "Georgia",                googleFamily: null,                                  cssFamily: "Georgia, serif",           tag: "display" },
   { id: "helvetica",              label: "Helvetica",              googleFamily: null,                                  cssFamily: "Helvetica, Arial, sans-serif", tag: "display" },
+  { id: "poppins",                label: "Poppins",                googleFamily: "Poppins:wght@400;500;700",            cssFamily: "'Poppins'",                tag: "display" },
+  { id: "outfit",                 label: "Outfit",                 googleFamily: "Outfit:wght@400;500;700",             cssFamily: "'Outfit'",                 tag: "display" },
+  { id: "dm-sans",                label: "DM Sans",                googleFamily: "DM+Sans:wght@400;500;700",            cssFamily: "'DM Sans'",                tag: "display" },
+  { id: "inter",                  label: "Inter",                  googleFamily: "Inter:wght@400;500;700",              cssFamily: "'Inter'",                  tag: "display" },
+  { id: "playfair-display",       label: "Playfair Display",       googleFamily: "Playfair+Display:wght@400;500;700",   cssFamily: "'Playfair Display'",       tag: "display" },
+  { id: "merriweather",           label: "Merriweather",           googleFamily: "Merriweather:wght@400;700",           cssFamily: "'Merriweather'",           tag: "display" },
+  { id: "bebas-neue",             label: "Bebas Neue",             googleFamily: "Bebas+Neue",                          cssFamily: "'Bebas Neue'",             tag: "display" },
 ];
 
 export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[] =

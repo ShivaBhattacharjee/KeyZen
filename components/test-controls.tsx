@@ -63,6 +63,9 @@ export function TestControls({
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
   const [langSearch, setLangSearch] = useState("");
+  const [customVal, setCustomVal] = useState("");
+  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
+  const [wordPopoverOpen, setWordPopoverOpen] = useState(false);
   const { setTestSettingsOpen } = useAppChrome();
 
   const setDrawerOpen = (open: boolean) => {
@@ -218,18 +221,49 @@ export function TestControls({
               {mode === "words" ? "Word Count" : mode === "quote" ? "Quote Length" : mode === "custom" ? "Custom Text" : mode === "code" ? "Language / Chapter" : "Time (s)"}
             </span>
             {mode === "words" ? (
-              <div className="grid grid-cols-4 gap-2">
-                {[10, 25, 50, 100].map((w) => (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => onWordOptionChange(w as WordOption)}
-                    className={drawerBtnClass(wordOption === w)}
-                  >
-                    <span className="text-base font-semibold">{w}</span>
-                  </button>
-                ))}
-              </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[10, 25, 50, 100].map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => onWordOptionChange(w)}
+                      className={drawerBtnClass(wordOption === w)}
+                    >
+                      <span className="text-base font-semibold">{w}</span>
+                    </button>
+                  ))}
+                  <Popover open={wordPopoverOpen} onOpenChange={setWordPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={drawerBtnClass(![10, 25, 50, 100].includes(wordOption))}
+                      >
+                        <IconTool size={18} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-40 p-2" side="top" align="center">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Words</span>
+                        <input
+                          type="number"
+                          placeholder="e.g. 500"
+                          defaultValue={wordOption}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") {
+                              const val = parseInt(e.currentTarget.value);
+                              if (val > 0) {
+                                onWordOptionChange(val);
+                                setWordPopoverOpen(false);
+                              }
+                            }
+                          }}
+                          className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
             ) : mode === "quote" ? (
               <div className="grid grid-cols-3 gap-2">
                 {(["short", "medium", "long"] as QuoteLength[]).map((q) => (
@@ -368,18 +402,49 @@ export function TestControls({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {[15, 30, 60, 120].map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => onTimeOptionChange(t as TimeOption)}
-                    className={drawerBtnClass(timeOption === t)}
-                  >
-                    <span className="text-base font-semibold">{t}</span>
-                  </button>
-                ))}
-              </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[15, 30, 60, 120].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => onTimeOptionChange(t)}
+                      className={drawerBtnClass(timeOption === t)}
+                    >
+                      <span className="text-base font-semibold">{t}</span>
+                    </button>
+                  ))}
+                  <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={drawerBtnClass(![15, 30, 60, 120].includes(timeOption))}
+                      >
+                        <IconTool size={18} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-40 p-2" side="top" align="center">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
+                        <input
+                          type="number"
+                          placeholder="seconds"
+                          defaultValue={timeOption}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") {
+                              const val = parseInt(e.currentTarget.value);
+                              if (val > 0) {
+                                onTimeOptionChange(val);
+                                setTimePopoverOpen(false);
+                              }
+                            }
+                          }}
+                          className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
             )}
           </div>
         </>
@@ -542,11 +607,39 @@ export function TestControls({
               <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
 
               {mode === "words" ? (
-                <Tabs value={String(wordOption)} onValueChange={(v) => onWordOptionChange(Number(v) as WordOption)} className="flex items-center">
+                <Tabs value={![10, 25, 50, 100].includes(wordOption) ? "custom" : String(wordOption)} onValueChange={(v) => { if (v !== "custom") onWordOptionChange(Number(v)) }} className="flex items-center">
                   <TabsList>
                     {[10, 25, 50, 100].map((w) => (
                       <TabsTrigger key={w} value={String(w)} className="px-3 text-xs cursor-pointer">{w}</TabsTrigger>
                     ))}
+                    <Popover open={wordPopoverOpen} onOpenChange={setWordPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <TabsTrigger value="custom" className="px-3 text-xs cursor-pointer">
+                          <IconTool size={13} className={cn(![10, 25, 50, 100].includes(wordOption) && "text-primary")} />
+                        </TabsTrigger>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-40 p-2" sideOffset={12} align="center">
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Words</span>
+                          <input
+                            type="number"
+                            placeholder="e.g. 500"
+                            defaultValue={wordOption}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === "Enter") {
+                                const val = parseInt(e.currentTarget.value);
+                                if (val > 0) {
+                                  onWordOptionChange(val);
+                                  setWordPopoverOpen(false);
+                                }
+                              }
+                            }}
+                            className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TabsList>
                 </Tabs>
               ) : mode === "quote" ? (
@@ -577,11 +670,39 @@ export function TestControls({
               ) : mode === "code" ? (
                 codeSelectors
               ) : (
-                <Tabs value={String(timeOption)} onValueChange={(v) => onTimeOptionChange(Number(v) as TimeOption)} className="flex items-center">
+                <Tabs value={![15, 30, 60, 120].includes(timeOption) ? "custom" : String(timeOption)} onValueChange={(v) => { if (v !== "custom") onTimeOptionChange(Number(v)) }} className="flex items-center">
                   <TabsList>
                     {[15, 30, 60, 120].map((t) => (
                       <TabsTrigger key={t} value={String(t)} className="px-3 text-xs cursor-pointer">{t}</TabsTrigger>
                     ))}
+                    <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <TabsTrigger value="custom" className="px-3 text-xs cursor-pointer">
+                          <IconTool size={13} className={cn(![15, 30, 60, 120].includes(timeOption) && "text-primary")} />
+                        </TabsTrigger>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-40 p-2" sideOffset={12} align="center">
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
+                          <input
+                            type="number"
+                            placeholder="seconds"
+                            defaultValue={timeOption}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === "Enter") {
+                                const val = parseInt(e.currentTarget.value);
+                                if (val > 0) {
+                                  onTimeOptionChange(val);
+                                  setTimePopoverOpen(false);
+                                }
+                              }
+                            }}
+                            className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TabsList>
                 </Tabs>
               )}

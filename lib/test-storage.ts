@@ -2,8 +2,8 @@ import type { QuoteLength } from "@/lib/quotes"
 import type { Difficulty } from "@/lib/words"
 
 export type TestMode = "time" | "words" | "quote" | "zen" | "code" | "custom"
-export type TimeOption = 15 | 30 | 60 | 120
-export type WordOption = 10 | 25 | 50 | 100
+export type TimeOption = number
+export type WordOption = number
 
 export const TEST_MODE_STORAGE_KEY = "tc-test-mode"
 export const TIME_OPTION_STORAGE_KEY = "tc-time-option"
@@ -44,7 +44,7 @@ export function readStoredTimeOption(): TimeOption | undefined {
   const raw = localStorage.getItem(TIME_OPTION_STORAGE_KEY)
   if (raw === null) return undefined
   const n = Number(raw)
-  if (!Number.isFinite(n) || !VALID_TIME_OPTIONS.includes(n as TimeOption))
+  if (!Number.isFinite(n) || n <= 0)
     return undefined
   return n as TimeOption
 }
@@ -54,10 +54,7 @@ export function readStoredWordOption(): WordOption | undefined {
   const raw = localStorage.getItem(WORD_OPTION_STORAGE_KEY)
   if (raw === null) return undefined
   const n = Number(raw)
-  if (
-    !Number.isFinite(n) ||
-    !(VALID_WORD_OPTIONS as readonly number[]).includes(n)
-  )
+  if (!Number.isFinite(n) || n <= 0)
     return undefined
   return n as WordOption
 }

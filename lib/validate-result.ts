@@ -116,7 +116,7 @@ export function validateResult(stats: ResultStats): ValidationResult {
   if (elapsedSeconds <= 0)
     return { valid: false, reason: "zero_time" }
 
-  if (elapsedSeconds < MIN_ELAPSED_SECONDS)
+  if (elapsedSeconds < 1)
     return { valid: false, reason: "too_short" }
 
   // 5. Impossible speed — human ceiling

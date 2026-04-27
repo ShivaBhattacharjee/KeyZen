@@ -21,6 +21,9 @@ const LANG_NAMES = {
   cpp: "C++",
   c: "C",
   java: "Java",
+  php: "PHP",
+  sql: "SQL",
+  ruby: "Ruby",
 };
 
 const LANG_EXT = {
@@ -35,6 +38,9 @@ const LANG_EXT = {
   cpp: "cpp",
   c: "c",
   java: "java",
+  php: "php",
+  sql: "sql",
+  ruby: "rb",
 };
 
 async function main() {

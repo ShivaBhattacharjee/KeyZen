@@ -6,7 +6,7 @@ import type { SoundPack } from "@/components/settings-context"
 import { CaretDownIcon } from "@phosphor-icons/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
-import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS, } from "@/components/settings-context"
+import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS } from "@/components/settings-context"
 import { NextThemeSwitcher } from "@/components/kibo-ui/theme-switcher"
 
 
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/com
 import { cn } from "@/lib/utils"
 import type { Language } from "@/lib/languages"
 import { getLanguageManifest, isRTLLanguage } from "@/lib/languages"
+import type { ThemeOption } from "@/app/api/themes/route"
 
 interface SettingsPanelProps {
   open: boolean
@@ -22,15 +23,18 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const {
-    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers, soundPackLoading,
+    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers, soundPackLoading, colorTheme, setColorTheme,
   } = useSettings()
   const isRTL = isRTLLanguage(language)
   const [isMobile, setIsMobile] = useState(false)
   const [fontPickerOpen, setFontPickerOpen] = useState(false)
   const [fontSearch, setFontSearch] = useState("")
+  const [themePickerOpen, setThemePickerOpen] = useState(false)
+  const [themeSearch, setThemeSearch] = useState("")
   const [langPickerOpen, setLangPickerOpen] = useState(false)
   const [langSearch, setLangSearch] = useState("")
   const [languages, setLanguages] = useState<Language[]>([])
+  const [themes, setThemes] = useState<ThemeOption[]>([])
   const [cacheInfo, setCacheInfo] = useState<string | null>(null)
 
   const clearSWCache = async () => {
@@ -58,7 +62,10 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     if (open && languages.length === 0) {
       getLanguageManifest().then(setLanguages)
     }
-  }, [open, languages.length])
+    if (open && themes.length === 0) {
+      fetch("/api/themes").then((r) => r.json()).then(setThemes).catch(() => {})
+    }
+  }, [open, languages.length, themes.length])
 
   // Drag-to-scroll for color swatches
   const swatchRef = useRef<HTMLDivElement>(null)
@@ -92,6 +99,100 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <SectionLabel>Theme</SectionLabel>
                 <NextThemeSwitcher />
               </section>
+
+              {/* Color Theme Picker */}
+              <section>
+                <SectionLabel>Color Theme</SectionLabel>
+                <div className="relative mt-3">
+                  <button
+                    type="button"
+                    onClick={() => { setThemePickerOpen((v) => !v); setThemeSearch("") }}
+                    className={cn(
+                      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+                      "hover:bg-muted/50"
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      {/* Swatch for the selected theme */}
+                      {(() => {
+                        const active = themes.find((t) => t.id === colorTheme)
+                        const swatchColor = active?.primaryColor ?? `var(--primary)`
+                        return (
+                          <span
+                            className="size-3 shrink-0 rounded-full border border-black/10"
+                            style={{ background: swatchColor }}
+                          />
+                        )
+                      })()}
+                      {themes.find((t) => t.id === colorTheme)?.label ?? colorTheme}
+                    </span>
+                    <CaretDownIcon
+                      className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", themePickerOpen && "rotate-180")}
+                      weight="bold"
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {themePickerOpen && (
+                      <motion.div
+                        key="theme-list"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
+                      >
+                        <div className="border-b border-border px-2 py-1.5">
+                          <input
+                            type="text"
+                            placeholder="Search themes..."
+                            value={themeSearch}
+                            onChange={(e) => setThemeSearch(e.target.value)}
+                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                            autoFocus={false}
+                          />
+                        </div>
+                        <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                          {(() => {
+                            const q = themeSearch.trim().toLowerCase()
+                            const filtered = q
+                              ? themes.filter((t) => t.label.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
+                              : themes
+                            return filtered.length > 0 ? (
+                              filtered.map((t) => (
+                                <button
+                                  type="button"
+                                  key={t.id}
+                                  onClick={() => { setColorTheme(t.id, t.url, t.fontSans, t.fontMono); setThemePickerOpen(false); setThemeSearch("") }}
+                                  className={cn(
+                                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors text-left",
+                                    colorTheme === t.id
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  )}
+                                >
+                                  {/* Color swatch */}
+                                  <span
+                                    className="size-3 shrink-0 rounded-full border border-black/10"
+                                    style={{
+                                      background: t.primaryColor ?? `var(--primary)`,
+                                    }}
+                                  />
+                                  <span style={t.fontSans ? { fontFamily: t.fontSans } : undefined}>
+                                    {t.label}
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <p className="py-4 text-center text-xs text-muted-foreground">No themes found</p>
+                            )
+                          })()}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </section>
+
 
               <section>
                 <SectionLabel>Accent</SectionLabel>

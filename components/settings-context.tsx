@@ -35,6 +35,9 @@ interface SettingsContextType {
   fontCssFamily: string;
   fontSize: FontSize;
   setFontSize: (s: FontSize) => void;
+  colorTheme: string;
+  themeLoading: boolean;
+  setColorTheme: (t: string, url: string | null, fontSans?: string | null, fontMono?: string | null) => void;
   showKeyboard: boolean;
   setShowKeyboard: (v: boolean) => void;
   soundEnabled: boolean;
@@ -90,9 +93,101 @@ function applyFontToDom(fontId: TypingFont) {
   document.documentElement.style.setProperty("--typing-font", option.cssFamily);
 }
 
+const THEME_LINK_ID = "kz-color-theme";
+
+/** System font keywords that don't need to be loaded from Google Fonts */
+const SYSTEM_FONT_PREFIXES = ["ui-", "system-ui", "-apple-", "BlinkMacSystemFont"];
+
+function isSystemFont(name: string): boolean {
+  const n = name.replace(/['"/]/g, "").trim();
+  return SYSTEM_FONT_PREFIXES.some((p) => n === p || n.startsWith(p));
+}
+
+/**
+ * Load a Google Font by its display name (e.g. "Outfit", "Plus Jakarta Sans").
+ * Constructs a canonical Google Fonts v2 URL. No-ops for system fonts.
+ */
+function loadThemeGoogleFont(fontStack: string) {
+  const firstName = fontStack.split(",")[0].replace(/['"/]/g, "").trim();
+  if (!firstName || isSystemFont(firstName)) return;
+  const encoded = firstName.replace(/\s+/g, "+");
+  const id = `gf-theme-${encoded}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encoded}:wght@400;500;700&display=swap`;
+  document.head.appendChild(link);
+}
+
+/**
+ * Override the --font-sans / --font-mono inline styles that Next.js injects
+ * on <html> with the values from the theme CSS. Loads Google Fonts as needed.
+ */
+function applyThemeFontsToDom(fontSans: string | null, fontMono: string | null) {
+  if (fontSans) {
+    loadThemeGoogleFont(fontSans);
+    document.documentElement.style.setProperty("--font-sans", fontSans);
+  }
+  if (fontMono) {
+    loadThemeGoogleFont(fontMono);
+    document.documentElement.style.setProperty("--font-mono", fontMono);
+  }
+}
+
+/** Remove theme font overrides so Next.js CSS vars take effect again. */
+function revertThemeFontsToDom() {
+  document.documentElement.style.removeProperty("--font-sans");
+  document.documentElement.style.removeProperty("--font-mono");
+}
+
+/**
+ * Inject / swap the theme stylesheet. When url is null (default theme),
+ * the sheet is removed. In both cases, the accent is always preserved
+ * on data-accent so the user can still override theme colours.
+ */
+function applyColorThemeToDom(url: string | null, currentAccent: AccentColor, onLoad?: () => void) {
+  const existing = document.getElementById(THEME_LINK_ID) as HTMLLinkElement | null;
+
+  document.documentElement.setAttribute("data-accent", currentAccent);
+
+  if (!url) {
+    existing?.remove();
+    queueMicrotask(() => { syncKeyZenFavicon(); onLoad?.(); });
+    return;
+  }
+
+  // Safety fallback in case the browser hangs on invalid @imports in raw CSS files
+  let handled = false;
+  const finish = () => {
+    if (handled) return;
+    handled = true;
+    syncKeyZenFavicon();
+    onLoad?.();
+  };
+
+  const timeoutId = setTimeout(finish, 2000);
+
+  if (existing) {
+    existing.onload = () => { clearTimeout(timeoutId); finish(); };
+    existing.onerror = () => { clearTimeout(timeoutId); finish(); };
+    existing.href = url;
+  } else {
+    const link = document.createElement("link");
+    link.id = THEME_LINK_ID;
+    link.rel = "stylesheet";
+    link.onload = () => { clearTimeout(timeoutId); finish(); };
+    link.onerror = () => { clearTimeout(timeoutId); finish(); };
+    link.href = url;
+    document.head.appendChild(link);
+  }
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [accent, setAccentState] = useState<AccentColor>("teal");
   const [font, setFontState] = useState<TypingFont>("geist-mono");
+  const [colorTheme, setColorThemeState] = useState<string>("default");
+  const [themeLoading, setThemeLoading] = useState(false);
   const [showKeyboard, setShowKeyboardState] = useState(true);
   const [soundEnabled, setSoundEnabledState] = useState(true);
   const [clickSoundEnabled, setClickSoundEnabledState] = useState(true);
@@ -113,6 +208,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useMountEffect(() => {
     const savedAccent = localStorage.getItem("tc-accent") as AccentColor | null;
     const savedFont = localStorage.getItem("tc-font") as TypingFont | null;
+    const savedColorTheme = localStorage.getItem("tc-color-theme");
+    const savedColorThemeUrl = localStorage.getItem("tc-color-theme-url");
     const savedShowKeyboard = localStorage.getItem("tc-show-keyboard");
     const savedSoundEnabled = localStorage.getItem("tc-sound-enabled");
     const savedClickSoundEnabled = localStorage.getItem("tc-click-sound-enabled");
@@ -133,6 +230,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     applyAccentToDom(initialAccent);
 
     if (savedFont) { setFontState(savedFont); applyFontToDom(savedFont); }
+    if (savedColorTheme) {
+      const savedFontSans = localStorage.getItem("tc-color-theme-font-sans");
+      const savedFontMono = localStorage.getItem("tc-color-theme-font-mono");
+      setColorThemeState(savedColorTheme);
+      // Pass initialAccent so applyColorThemeToDom can restore data-accent if needed
+      applyColorThemeToDom(savedColorThemeUrl ?? null, initialAccent);
+      applyThemeFontsToDom(savedFontSans, savedFontMono);
+    }
     if (savedShowKeyboard !== null) setShowKeyboardState(savedShowKeyboard !== "false");
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled !== "false");
     if (savedClickSoundEnabled !== null) setClickSoundEnabledState(savedClickSoundEnabled !== "false");
@@ -160,6 +265,49 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setFontState(f);
     applyFontToDom(f);
     localStorage.setItem("tc-font", f);
+  };
+
+  const setColorTheme = (t: string, url: string | null, fontSans?: string | null, fontMono?: string | null) => {
+    setColorThemeState(t);
+    setThemeLoading(true);
+    
+    // When changing a theme, automatically sync the accent to match the theme
+    // (the user can still override it later via the accent picker)
+    const newAccent = (t !== "default" ? t : "teal") as AccentColor;
+    setAccentState(newAccent);
+    localStorage.setItem("tc-accent", newAccent);
+
+    // Auto-sync font if the theme specifies it
+    if (fontMono) {
+      const firstFont = fontMono.split(",")[0].replace(/['"/]/g, "").trim();
+      const newFont = firstFont.toLowerCase().replace(/\s+/g, "-") as TypingFont;
+      setFontState(newFont);
+      applyFontToDom(newFont);
+      localStorage.setItem("tc-font", newFont);
+    } else if (t === "default") {
+      // Revert to default font
+      setFontState("geist-mono");
+      applyFontToDom("geist-mono");
+      localStorage.setItem("tc-font", "geist-mono");
+    }
+
+    applyColorThemeToDom(url, newAccent, () => setThemeLoading(false));
+    if (url) {
+      // Apply and persist font overrides
+      applyThemeFontsToDom(fontSans ?? null, fontMono ?? null);
+      localStorage.setItem("tc-color-theme-url", url);
+      if (fontSans) localStorage.setItem("tc-color-theme-font-sans", fontSans);
+      else localStorage.removeItem("tc-color-theme-font-sans");
+      if (fontMono) localStorage.setItem("tc-color-theme-font-mono", fontMono);
+      else localStorage.removeItem("tc-color-theme-font-mono");
+    } else {
+      // Revert fonts back to Next.js defaults
+      revertThemeFontsToDom();
+      localStorage.removeItem("tc-color-theme-url");
+      localStorage.removeItem("tc-color-theme-font-sans");
+      localStorage.removeItem("tc-color-theme-font-mono");
+    }
+    localStorage.setItem("tc-color-theme", t);
   };
 
   const setShowKeyboard = (v: boolean) => {
@@ -241,6 +389,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         accent, setAccent,
         font, setFont, fontCssFamily,
         fontSize, setFontSize,
+        colorTheme, setColorTheme, themeLoading,
         showKeyboard, setShowKeyboard,
         soundEnabled, setSoundEnabled,
         clickSoundEnabled, setClickSoundEnabled,
@@ -259,6 +408,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {themeLoading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+          <p className="mt-4 text-sm font-medium text-muted-foreground animate-pulse">Applying Theme...</p>
+        </div>
+      )}
     </SettingsContext.Provider>
   );
 }

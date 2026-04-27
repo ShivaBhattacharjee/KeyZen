@@ -37,7 +37,9 @@ export const SOUND_PACKS: SoundPackOption[] = [
 export type AccentColor =
   | "teal" | "red" | "amber" | "purple" | "green" | "rose" | "blue" | "orange"
   | "cyan" | "pink" | "indigo" | "lime" | "violet" | "lightgreen" | "sky"
-  | "coral" | "mint" | "gold" | "lavender";
+  | "coral" | "mint" | "gold" | "lavender"
+  // Auto-synced from themes
+  | "de-swiss-design" | "efferd" | "melancholik-mint" | "vermillion" | "autoblog" | "claude" | "offworld" | "shopify-red" | "t3chat";
 
 export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[] = [
   { id: "teal",       label: "Teal",        swatch: "oklch(0.55 0.13 200)" },
@@ -59,6 +61,16 @@ export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[]
   { id: "mint",       label: "Mint",        swatch: "oklch(0.72 0.13 175)" },
   { id: "gold",       label: "Gold",        swatch: "oklch(0.75 0.17 90)"  },
   { id: "lavender",   label: "Lavender",    swatch: "oklch(0.65 0.16 285)" },
+  // Auto-synced from themes
+  { id: "de-swiss-design", label: "DE Swiss Design", swatch: "hsl(0, 100%, 43%)" },
+  { id: "efferd", label: "Efferd", swatch: "oklch(0.2050 0 0)" },
+  { id: "melancholik-mint", label: "Melancholik Mint", swatch: "oklch(0.3211 0 0)" },
+  { id: "vermillion", label: "Vermillion", swatch: "oklch(0.5895 0.1791 31.9223)" },
+  { id: "autoblog", label: "Autoblog", swatch: "oklch(0.6404 0.2153 35.9003)" },
+  { id: "claude", label: "Claude", swatch: "oklch(0.6171 0.1375 39.0427)" },
+  { id: "offworld", label: "Offworld", swatch: "oklch(0.2178 0 0)" },
+  { id: "shopify-red", label: "Shopify Red", swatch: "oklch(0.5778 0.2282 26.5713)" },
+  { id: "t3chat", label: "T3chat", swatch: "oklch(0.5316 0.1409 355.1999)" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -103,7 +115,10 @@ export type TypingFont =
   | "libre-baskerville" | "crimson-pro" | "cinzel" | "cormorant-garamond" | "zilla-slab"
   // Handwriting
   | "caveat" | "patrick-hand" | "indie-flower" | "architects-daughter"
-  | "permanent-marker" | "shadows-into-light" | "dancing-script" | "amatic-sc" | "sacramento";
+  | "permanent-marker" | "shadows-into-light" | "dancing-script" | "amatic-sc" | "sacramento"
+  // Auto-synced from themes
+  | "sf-mono"
+  | "geist";
 
 export interface FontOption {
   id: TypingFont;
@@ -223,4 +238,7 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "dancing-script",        label: "Dancing Script",        googleFamily: "Dancing+Script",                     cssFamily: "'Dancing Script'",             tag: "handwriting" },
   { id: "amatic-sc",             label: "Amatic SC",             googleFamily: "Amatic+SC",                          cssFamily: "'Amatic SC'",                  tag: "handwriting" },
   { id: "sacramento",            label: "Sacramento",            googleFamily: "Sacramento",                         cssFamily: "'Sacramento'",                 tag: "handwriting" },
+  // Auto-synced from themes
+  { id: "sf-mono", label: "SF Mono", googleFamily: "SF+Mono:wght@400;500;700", cssFamily: "'SF Mono'", tag: "mono" },
+  { id: "geist", label: "Geist", googleFamily: "Geist:wght@400;500;700", cssFamily: "'Geist'", tag: "display" },
 ];

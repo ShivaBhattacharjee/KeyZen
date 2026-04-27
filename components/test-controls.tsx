@@ -24,7 +24,7 @@ export interface TestControlsProps {
   mode: TestMode;
   timeOption: TimeOption;
   wordOption: WordOption;
-  quoteLength: QuoteLen gth;
+  quoteLength: QuoteLength;
   punctuation: boolean;
   numbers: boolean;
   difficulty: Difficulty | undefined;

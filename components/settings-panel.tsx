@@ -124,7 +124,9 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                           />
                         )
                       })()}
-                      {themes.find((t) => t.id === colorTheme)?.label ?? colorTheme}
+                      {themes.find((t) => t.id === colorTheme)?.label ?? (
+                        colorTheme.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+                      )}
                     </span>
                     <CaretDownIcon
                       className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", themePickerOpen && "rotate-180")}

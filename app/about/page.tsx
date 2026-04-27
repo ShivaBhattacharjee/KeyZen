@@ -44,6 +44,9 @@ export default async function AboutPage() {
         <h1 className="font-(family-name:--font-doto) text-3xl font-bold text-foreground md:text-4xl">
           About KeyZen
         </h1>
+        <p className="text-sm text-muted-foreground/50 -mt-2">
+          🚀 Proudly launched on April 13, 2025
+        </p>
         <p className="leading-relaxed">
           KeyZen is a small side project: a clean, browser-based typing speed
           test built for practice and fun. It is{" "}
@@ -102,6 +105,8 @@ export default async function AboutPage() {
           </a>
           .
         </p>
+
+
 
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">Contributors</p>

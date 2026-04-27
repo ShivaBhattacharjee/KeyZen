@@ -150,6 +150,31 @@
     "has1k": false
   },
   {
+    "name": "Chinese (Simplified, Pinyin)",
+    "code": "chinese_simplified",
+    "has1k": true
+  },
+  {
+    "name": "Chinese (Simplified, Wubi)",
+    "code": "chinese_simplified_wubi",
+    "has1k": true
+  },
+  {
+    "name": "Chinese (Traditional, Pinyin)",
+    "code": "chinese_traditional",
+    "has1k": true
+  },
+  {
+    "name": "Chinese (Traditional, Zhuyin)",
+    "code": "chinese_traditional_zhuyin",
+    "has1k": true
+  },
+  {
+    "name": "Chinese (Traditional, Cangjie)",
+    "code": "chinese_traditional_cangjie",
+    "has1k": true
+  },
+  {
     "name": "Japanese (Hiragana)",
     "code": "japanese_hiragana",
     "has1k": false

@@ -33,13 +33,14 @@ export async function fetchLanguageWords(
   code: string,
   hard: boolean,
 ): Promise<string[]> {
-  const key = hard ? `${code}_1k` : code;
+  const fileCode = getLanguageFileCode(code);
+  const key = hard ? `${fileCode}_1k` : fileCode;
   if (wordCache.has(key)) return wordCache.get(key)!;
 
   // Try the requested variant; fall back to base if _1k doesn't exist
   let res = await fetch(`/languages/${key}.json`);
   if (!res.ok && hard) {
-    res = await fetch(`/languages/${code}.json`);
+    res = await fetch(`/languages/${fileCode}.json`);
   }
   if (!res.ok) {
     // Ultimate fallback: return empty and let caller use random-words
@@ -48,4 +49,15 @@ export async function fetchLanguageWords(
   const data = (await res.json()) as { words: string[] };
   wordCache.set(key, data.words);
   return data.words;
+}
+
+const LANGUAGE_FILE_MAP: Record<string, string> = {
+  chinese_traditional_zhuyin: "chinese_traditional",
+  chinese_traditional_cangjie: "chinese_traditional",
+  chinese_simplified_wubi: "chinese_simplified",
+};
+
+/** Get the canonical file code for a language layout variant. */
+export function getLanguageFileCode(code: string): string {
+  return LANGUAGE_FILE_MAP[code] ?? code;
 }

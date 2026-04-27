@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useAppChrome } from "@/components/app-chrome";
 import { motion, AnimatePresence } from "motion/react";
 import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, } from "@tabler/icons-react";
 import { CustomTextDialog } from "@/components/custom-text-dialog";
+import { CustomTimeDialog } from "@/components/custom-time-dialog";
 import type { QuoteLength } from "@/lib/quotes";
 import type { Difficulty } from "@/lib/words";
 import { cn } from "@/lib/utils"
@@ -23,7 +24,7 @@ export interface TestControlsProps {
   mode: TestMode;
   timeOption: TimeOption;
   wordOption: WordOption;
-  quoteLength: QuoteLength;
+  quoteLength: QuoteLen gth;
   punctuation: boolean;
   numbers: boolean;
   difficulty: Difficulty | undefined;
@@ -45,7 +46,7 @@ export interface TestControlsProps {
   onRestart: () => void;
 }
 
-export function TestControls({
+export const TestControls = memo(function TestControls({
   mode, timeOption, wordOption, quoteLength,
   punctuation, numbers, difficulty, customText,
   codeLanguage, codeChapter, codeManifest,
@@ -64,7 +65,6 @@ export function TestControls({
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
   const [langSearch, setLangSearch] = useState("");
   const [customVal, setCustomVal] = useState("");
-  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
   const [wordPopoverOpen, setWordPopoverOpen] = useState(false);
   const { setTestSettingsOpen } = useAppChrome();
 
@@ -111,9 +111,9 @@ export function TestControls({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-1.5 bg-zinc-100 dark:bg-zinc-800 border-border rounded-lg flex flex-col shadow-sm" align="center" sideOffset={8}>
           <div className="px-1 pb-1.5 pt-1">
-            <input 
-              type="text" 
-              placeholder="Search language..." 
+            <input
+              type="text"
+              placeholder="Search language..."
               value={langSearch}
               onChange={(e) => setLangSearch(e.target.value)}
               className="w-full bg-zinc-200/50 dark:bg-zinc-700/50 text-foreground px-2.5 py-1.5 rounded min-w-[140px] text-xs outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/70"
@@ -122,41 +122,41 @@ export function TestControls({
           </div>
           <div className="flex flex-col max-h-[300px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar" style={{ scrollbarWidth: "thin" }}>
             {Object.values(codeManifest)
-              .filter(lang => 
-                !langSearch || 
-                lang.name.toLowerCase().includes(langSearch.toLowerCase()) || 
-                lang.ext.toLowerCase().includes(langSearch.toLowerCase()) || 
+              .filter(lang =>
+                !langSearch ||
+                lang.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+                lang.ext.toLowerCase().includes(langSearch.toLowerCase()) ||
                 lang.code.toLowerCase().includes(langSearch.toLowerCase())
               )
               .map(lang => (
-              <button
-                type="button"
-                key={lang.code}
-                onClick={() => {
-                  onCodeLanguageChange(lang.code);
-                  setDesktopLangOpen(false);
-                }}
-                className={renderDropdownOptionClass(codeLanguage === lang.code)}
-              >
-                {lang.name}
-              </button>
-            ))}
-            {Object.values(codeManifest).filter(lang => 
-              !langSearch || 
-              lang.name.toLowerCase().includes(langSearch.toLowerCase()) || 
-              lang.ext.toLowerCase().includes(langSearch.toLowerCase()) || 
+                <button
+                  type="button"
+                  key={lang.code}
+                  onClick={() => {
+                    onCodeLanguageChange(lang.code);
+                    setDesktopLangOpen(false);
+                  }}
+                  className={renderDropdownOptionClass(codeLanguage === lang.code)}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            {Object.values(codeManifest).filter(lang =>
+              !langSearch ||
+              lang.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+              lang.ext.toLowerCase().includes(langSearch.toLowerCase()) ||
               lang.code.toLowerCase().includes(langSearch.toLowerCase())
             ).length === 0 && (
-              <p className="py-4 text-center text-xs text-muted-foreground w-[140px]">No results</p>
-            )}
+                <p className="py-4 text-center text-xs text-muted-foreground w-[140px]">No results</p>
+              )}
           </div>
         </PopoverContent>
       </Popover>
 
       <Popover open={desktopChapterOpen} onOpenChange={setDesktopChapterOpen}>
         <PopoverTrigger asChild>
-          <button 
-            className={codeSelectTriggerClass} 
+          <button
+            className={codeSelectTriggerClass}
             data-state={codeChapter ? "active" : "inactive"}
             disabled={!codeLanguage || !codeManifest[codeLanguage]}
           >
@@ -191,12 +191,12 @@ export function TestControls({
         <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Mode</span>
         <div className="grid grid-cols-3 gap-2">
           {([
-            { value: "time",   icon: IconClock,    label: "time"   },
-            { value: "words",  icon: IconLetterA,  label: "words"  },
-            { value: "quote",  icon: IconQuote,    label: "quote"  },
-            { value: "zen",    icon: IconMountain, label: "zen"    },
-            { value: "code",   icon: IconCode,     label: "code"   },
-            { value: "custom", icon: IconTool,     label: "custom" },
+            { value: "time", icon: IconClock, label: "time" },
+            { value: "words", icon: IconLetterA, label: "words" },
+            { value: "quote", icon: IconQuote, label: "quote" },
+            { value: "zen", icon: IconMountain, label: "zen" },
+            { value: "code", icon: IconCode, label: "code" },
+            { value: "custom", icon: IconTool, label: "custom" },
           ] as const).map(({ value, icon: Icon, label }) => (
             <button
               key={value}
@@ -320,39 +320,39 @@ export function TestControls({
                         className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 flex flex-col max-h-40 md:max-h-56"
                       >
                         <div className="px-2 py-1.5 border-b border-border shrink-0">
-                            <input
-                              type="text"
-                              placeholder="Search language..."
-                              value={langSearch}
-                              onChange={(e) => setLangSearch(e.target.value)}
-                              className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
-                              autoFocus={false}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-0.5 p-1.5 overflow-y-auto custom-scrollbar flex-1">
-                            {(() => {
-                              const filtered = Object.values(codeManifest).filter(lang =>
-                                !langSearch ||
-                                lang.name.toLowerCase().includes(langSearch.toLowerCase()) ||
-                                lang.ext.toLowerCase().includes(langSearch.toLowerCase()) ||
-                                lang.code.toLowerCase().includes(langSearch.toLowerCase())
-                              )
-                              return filtered.length > 0 ? (
-                                filtered.map((lang) => (
-                                  <button
-                                    type="button"
-                                    key={lang.code}
-                                    onClick={() => { onCodeLanguageChange(lang.code); setLangPickerOpen(false); setLangSearch(""); }}
-                                    className={renderDropdownOptionClass(codeLanguage === lang.code)}
-                                  >
-                                    {lang.name}
-                                  </button>
-                                ))
-                              ) : (
-                                <p className="py-3 text-center text-xs text-muted-foreground">No results</p>
-                              )
-                            })()}
-                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search language..."
+                            value={langSearch}
+                            onChange={(e) => setLangSearch(e.target.value)}
+                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
+                            autoFocus={false}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-0.5 p-1.5 overflow-y-auto custom-scrollbar flex-1">
+                          {(() => {
+                            const filtered = Object.values(codeManifest).filter(lang =>
+                              !langSearch ||
+                              lang.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+                              lang.ext.toLowerCase().includes(langSearch.toLowerCase()) ||
+                              lang.code.toLowerCase().includes(langSearch.toLowerCase())
+                            )
+                            return filtered.length > 0 ? (
+                              filtered.map((lang) => (
+                                <button
+                                  type="button"
+                                  key={lang.code}
+                                  onClick={() => { onCodeLanguageChange(lang.code); setLangPickerOpen(false); setLangSearch(""); }}
+                                  className={renderDropdownOptionClass(codeLanguage === lang.code)}
+                                >
+                                  {lang.name}
+                                </button>
+                              ))
+                            ) : (
+                              <p className="py-3 text-center text-xs text-muted-foreground">No results</p>
+                            )
+                          })()}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -413,37 +413,18 @@ export function TestControls({
                       <span className="text-base font-semibold">{t}</span>
                     </button>
                   ))}
-                  <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
-                    <PopoverTrigger asChild>
+                  <CustomTimeDialog
+                    timeOption={timeOption}
+                    onSave={onTimeOptionChange}
+                    trigger={
                       <button
                         type="button"
                         className={drawerBtnClass(![15, 30, 60, 120].includes(timeOption))}
                       >
                         <IconTool size={18} />
                       </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-40 p-2" side="top" align="center">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
-                        <input
-                          type="number"
-                          placeholder="seconds"
-                          defaultValue={timeOption}
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === "Enter") {
-                              const val = parseInt(e.currentTarget.value);
-                              if (val > 0) {
-                                onTimeOptionChange(val);
-                                setTimePopoverOpen(false);
-                              }
-                            }
-                          }}
-                          className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                    }
+                  />
                 </div>
             )}
           </div>
@@ -464,7 +445,7 @@ export function TestControls({
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     { key: "easy", icon: IconFeather, label: "easy", active: difficulty === "easy", d: "easy" as const },
-                    { key: "hard", icon: IconFlame,   label: "hard", active: difficulty === "hard", d: "hard" as const },
+                    { key: "hard", icon: IconFlame, label: "hard", active: difficulty === "hard", d: "hard" as const },
                   ] as const).map(({ key, icon: Icon, label, active, d }) => (
                     <Tooltip key={key}>
                       <TooltipTrigger asChild>
@@ -490,8 +471,8 @@ export function TestControls({
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Toggles</span>
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    { key: "punctuation", icon: IconAt,     label: "punctuation", active: punctuation,  onClick: onPunctuationToggle },
-                    { key: "numbers",     icon: IconNumber,  label: "numbers",     active: numbers,      onClick: onNumbersToggle },
+                    { key: "punctuation", icon: IconAt, label: "punctuation", active: punctuation, onClick: onPunctuationToggle },
+                    { key: "numbers", icon: IconNumber, label: "numbers", active: numbers, onClick: onNumbersToggle },
                   ] as const).map(({ key, icon: Icon, label, active, onClick }) => (
                     <Tooltip key={key}>
                       <TooltipTrigger asChild>
@@ -538,8 +519,8 @@ export function TestControls({
                 <TooltipProvider delayDuration={200}>
                   <div className="flex flex-row items-center justify-center gap-1 rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800">
                     {([
-                      { key: "punctuation", icon: IconAt,    label: "punctuation", active: punctuation, onClick: onPunctuationToggle },
-                      { key: "numbers",     icon: IconNumber, label: "numbers",     active: numbers,     onClick: onNumbersToggle },
+                      { key: "punctuation", icon: IconAt, label: "punctuation", active: punctuation, onClick: onPunctuationToggle },
+                      { key: "numbers", icon: IconNumber, label: "numbers", active: numbers, onClick: onNumbersToggle },
                     ] as const).map(({ key, icon: Icon, label, active, onClick }) => (
                       <Tooltip key={key}>
                         <TooltipTrigger asChild>
@@ -559,7 +540,7 @@ export function TestControls({
                     <div className="h-4 w-px shrink-0 bg-border" />
                     {([
                       { key: "easy", icon: IconFeather, label: "easy", active: difficulty === "easy", d: "easy" as const },
-                      { key: "hard", icon: IconFlame,   label: "hard", active: difficulty === "hard", d: "hard" as const },
+                      { key: "hard", icon: IconFlame, label: "hard", active: difficulty === "hard", d: "hard" as const },
                     ] as const).map(({ key, icon: Icon, label, active, d }) => (
                       <Tooltip key={key}>
                         <TooltipTrigger asChild>
@@ -587,12 +568,12 @@ export function TestControls({
           <Tabs value={mode} onValueChange={(v) => onModeChange(v as TestMode)} className="flex items-center">
             <TabsList>
               {([
-                { value: "time",   icon: IconClock,    label: "time"   },
-                { value: "words",  icon: IconLetterA,  label: "words"  },
-                { value: "quote",  icon: IconQuote,    label: "quote"  },
-                { value: "zen",    icon: IconMountain, label: "zen"    },
-                { value: "code",   icon: IconCode,     label: "code"   },
-                { value: "custom", icon: IconTool,     label: "custom" },
+                { value: "time", icon: IconClock, label: "time" },
+                { value: "words", icon: IconLetterA, label: "words" },
+                { value: "quote", icon: IconQuote, label: "quote" },
+                { value: "zen", icon: IconMountain, label: "zen" },
+                { value: "code", icon: IconCode, label: "code" },
+                { value: "custom", icon: IconTool, label: "custom" },
               ] as const).map(({ value, icon: Icon, label }) => (
                 <TabsTrigger key={value} value={value} className="gap-1.5 px-3 text-xs cursor-pointer">
                   <Icon size={13} />
@@ -675,45 +656,26 @@ export function TestControls({
                     {[15, 30, 60, 120].map((t) => (
                       <TabsTrigger key={t} value={String(t)} className="px-3 text-xs cursor-pointer">{t}</TabsTrigger>
                     ))}
-                    <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
-                      <PopoverTrigger asChild>
+                    <CustomTimeDialog
+                      timeOption={timeOption}
+                      onSave={onTimeOptionChange}
+                      trigger={
                         <TabsTrigger value="custom" className="px-3 text-xs cursor-pointer">
                           <IconTool size={13} className={cn(![15, 30, 60, 120].includes(timeOption) && "text-primary")} />
                         </TabsTrigger>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-40 p-2" sideOffset={12} align="center">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Time</span>
-                          <input
-                            type="number"
-                            placeholder="seconds"
-                            defaultValue={timeOption}
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
-                              if (e.key === "Enter") {
-                                const val = parseInt(e.currentTarget.value);
-                                if (val > 0) {
-                                  onTimeOptionChange(val);
-                                  setTimePopoverOpen(false);
-                                }
-                              }
-                            }}
-                            className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      }
+                    />
                   </TabsList>
                 </Tabs>
               )}
 
-           
+
             </>
           )}
         </div>
 
         {/* Mobile / tablet button */}
-        <div className="flex lg:hidden items-center justify-center mb-5">
+        <div className="flex fixed z-50 left-0 right-0 lg:hidden items-center justify-center mb-5">
           <button
             type="button"
             onClick={(e) => {
@@ -793,4 +755,4 @@ export function TestControls({
       )}
     </>
   );
-}
+});

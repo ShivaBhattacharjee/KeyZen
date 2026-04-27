@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { IconX, IconLoader2 } from "@tabler/icons-react"
+import { IconX, IconLoader2, IconChevronDown } from "@tabler/icons-react"
 import type { SoundPack } from "@/components/settings-context"
 import { CaretDownIcon } from "@phosphor-icons/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
-import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS, } from "@/components/settings-context"
+import { useSettings, ACCENT_COLORS, FONT_OPTIONS, FONT_SIZES, SOUND_PACKS } from "@/components/settings-context"
 import { NextThemeSwitcher } from "@/components/kibo-ui/theme-switcher"
 
 
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/com
 import { cn } from "@/lib/utils"
 import type { Language } from "@/lib/languages"
 import { getLanguageManifest, isRTLLanguage } from "@/lib/languages"
+import type { ThemeOption } from "@/app/api/themes/route"
 
 interface SettingsPanelProps {
   open: boolean
@@ -22,16 +23,20 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const {
-    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers, soundPackLoading,
+    accent, setAccent, font, setFont, showKeyboard, setShowKeyboard, keyboardStyle, setKeyboardStyle, soundEnabled, setSoundEnabled, clickSoundEnabled, setClickSoundEnabled, realtimeWpm, setRealtimeWpm, faahMode, setFaahMode, ghostMode, setGhostMode, shakeMode, setShakeMode, soundPack, setSoundPack, language, setLanguage, showDiacritics, setShowDiacritics, fontSize, setFontSize, syntaxHighlighting, setSyntaxHighlighting, autoPair, setAutoPair, showLineNumbers, setShowLineNumbers, soundPackLoading, colorTheme, setColorTheme,
   } = useSettings()
   const isRTL = isRTLLanguage(language)
   const [isMobile, setIsMobile] = useState(false)
   const [fontPickerOpen, setFontPickerOpen] = useState(false)
   const [fontSearch, setFontSearch] = useState("")
+  const [themePickerOpen, setThemePickerOpen] = useState(false)
+  const [themeSearch, setThemeSearch] = useState("")
   const [langPickerOpen, setLangPickerOpen] = useState(false)
   const [langSearch, setLangSearch] = useState("")
   const [languages, setLanguages] = useState<Language[]>([])
+  const [themes, setThemes] = useState<ThemeOption[]>([])
   const [cacheInfo, setCacheInfo] = useState<string | null>(null)
+  const [showAllAccents, setShowAllAccents] = useState(false)
 
   const clearSWCache = async () => {
     if (!("caches" in window)) {
@@ -58,62 +63,176 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     if (open && languages.length === 0) {
       getLanguageManifest().then(setLanguages)
     }
-  }, [open, languages.length])
-
-  // Drag-to-scroll for color swatches
-  const swatchRef = useRef<HTMLDivElement>(null)
-  const dragState = useRef({ dragging: false, startX: 0, scrollLeft: 0 })
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    const el = swatchRef.current
-    if (!el) return
-    dragState.current = {
-      dragging: true,
-      startX: e.pageX - el.offsetLeft,
-      scrollLeft: el.scrollLeft,
+    if (open && themes.length === 0) {
+      fetch("/api/themes").then((r) => r.json()).then(setThemes).catch(() => { })
     }
-    el.style.cursor = "grabbing"
-  }
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragState.current.dragging || !swatchRef.current) return
-    e.preventDefault()
-    const x = e.pageX - swatchRef.current.offsetLeft
-    const walk = x - dragState.current.startX
-    swatchRef.current.scrollLeft = dragState.current.scrollLeft - walk
-  }
-  const onMouseUp = () => {
-    dragState.current.dragging = false
-    if (swatchRef.current) swatchRef.current.style.cursor = "grab"
-  }
+  }, [open, languages.length, themes.length])
+
+  const swatchRef = useRef<HTMLDivElement>(null)
 
   const panelContent = (
     <div className="flex-1 space-y-7 overflow-y-auto px-4 py-5">
-              <section className="flex items-center justify-between">
-                <SectionLabel>Theme</SectionLabel>
-                <NextThemeSwitcher />
-              </section>
+      <section className="flex items-center justify-between">
+        <SectionLabel>Theme</SectionLabel>
+        <NextThemeSwitcher />
+      </section>
 
-              <section>
-                <SectionLabel>Accent</SectionLabel>
-                <div
-                  ref={swatchRef}
-                  className="mt-3 flex gap-2 overflow-x-auto pb-1 select-none"
-                  style={{ cursor: "grab", scrollbarWidth: "none" }}
-                  onMouseDown={onMouseDown}
-                  onMouseMove={onMouseMove}
-                  onMouseUp={onMouseUp}
-                  onMouseLeave={onMouseUp}
+      {/* Color Theme Picker */}
+      <section>
+        <SectionLabel>Color Theme</SectionLabel>
+        <div className="relative mt-3">
+          <button
+            type="button"
+            onClick={() => { setThemePickerOpen((v) => !v); setThemeSearch("") }}
+            className={cn(
+              "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+              "hover:bg-muted/50"
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-2 truncate">
+              {/* Swatch for the selected theme */}
+              {(() => {
+                const active = themes.find((t) => t.id === colorTheme)
+                const swatchColor = active?.primaryColor ?? `var(--primary)`
+                return (
+                  <span
+                    className="size-3 shrink-0 rounded-full border border-black/10"
+                    style={{ background: swatchColor }}
+                  />
+                )
+              })()}
+              {themes.find((t) => t.id === colorTheme)?.label ?? (
+                colorTheme.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+              )}
+            </span>
+            <CaretDownIcon
+              className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", themePickerOpen && "rotate-180")}
+              weight="bold"
+            />
+          </button>
+          <AnimatePresence initial={false}>
+            {themePickerOpen && (
+              <motion.div
+                key="theme-list"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
+              >
+                <div className="border-b border-border px-2 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search themes..."
+                    value={themeSearch}
+                    onChange={(e) => setThemeSearch(e.target.value)}
+                    className="w-full bg-transparent text-[16px] md:text-xs outline-none placeholder:text-muted-foreground"
+                    autoFocus={false}
+                  />
+                </div>
+                <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  {(() => {
+                    const q = themeSearch.trim().toLowerCase()
+                    const filtered = q
+                      ? themes.filter((t) => t.label.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
+                      : themes
+                    return filtered.length > 0 ? (
+                      filtered.map((t) => (
+                        <button
+                          type="button"
+                          key={t.id}
+                          onClick={() => { setColorTheme(t.id, t.url, t.fontSans, t.fontMono); setThemePickerOpen(false); setThemeSearch("") }}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors text-left",
+                            colorTheme === t.id
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                        >
+                          {/* Color swatch */}
+                          <span
+                            className="size-3 shrink-0 rounded-full border border-black/10"
+                            style={{
+                              background: t.primaryColor ?? `var(--primary)`,
+                            }}
+                          />
+                          <span style={t.fontSans ? { fontFamily: t.fontSans } : undefined}>
+                            {t.label}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="py-4 text-center text-xs text-muted-foreground">No themes found</p>
+                    )
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
+
+
+      <section>
+        <SectionLabel>Accent</SectionLabel>
+        <div ref={swatchRef} className="mt-3">
+          <TooltipProvider delayDuration={300}>
+            <div className="grid grid-cols-8 gap-1.5">
+              {ACCENT_COLORS.slice(0, 7).map((c) => (
+                <Tooltip key={c.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setAccent(c.id)}
+                      className={cn(
+                        "h-7 w-full rounded-sm transition-all duration-150",
+                        accent === c.id
+                          ? "opacity-100 outline outline-2 outline-offset-[-2px] outline-white/50"
+                          : "opacity-40 hover:opacity-80"
+                      )}
+                      style={{ background: c.swatch }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{c.label}</TooltipContent>
+                </Tooltip>
+              ))}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setShowAllAccents((v) => !v)}
+                    className="flex h-7 w-full items-center justify-center rounded-sm bg-blue-500/80 text-white opacity-80 transition-all duration-150 hover:opacity-100"
+                  >
+                    <motion.span
+                      animate={{ rotate: showAllAccents ? 180 : 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="flex items-center justify-center"
+                    >
+                      <IconChevronDown size={13} />
+                    </motion.span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{showAllAccents ? "Show less" : "Show more"}</TooltipContent>
+              </Tooltip>
+            </div>
+            <AnimatePresence initial={false}>
+              {showAllAccents && (
+                <motion.div
+                  key="extra-accents"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-visible"
                 >
-                  <TooltipProvider delayDuration={300}>
-                    {ACCENT_COLORS.map((c) => (
+                  <div className="mt-1.5 grid grid-cols-8 gap-1.5">
+                    {ACCENT_COLORS.slice(7).map((c) => (
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
                           <button
                             onClick={() => setAccent(c.id)}
                             className={cn(
-                              "h-7 w-12 shrink-0 rounded-sm transition-all duration-150",
+                              "h-7 w-full rounded-sm transition-all duration-150",
                               accent === c.id
-                                ? "opacity-100"
+                                ? "opacity-100 outline outline-2 outline-offset-[-2px] outline-white/50"
                                 : "opacity-40 hover:opacity-80"
                             )}
                             style={{ background: c.swatch }}
@@ -122,335 +241,402 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                         <TooltipContent side="bottom">{c.label}</TooltipContent>
                       </Tooltip>
                     ))}
-                  </TooltipProvider>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </TooltipProvider>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          title="Sound"
+          description="Audio feedback when typing"
+        />
+        <ToggleRow
+          label="Keyboard sound"
+          description="Play sounds as you type each key"
+          enabled={soundEnabled}
+          onToggle={() => setSoundEnabled(!soundEnabled)}
+          disabledReason="keyboard not available on mobile"
+        />
+        <ToggleRow
+          label="Click sound"
+          description="Play a click sound on each keypress"
+          enabled={clickSoundEnabled}
+          onToggle={() => setClickSoundEnabled(!clickSoundEnabled)}
+        />
+      </section>
+
+      {showKeyboard && !isMobile && (
+        <section>
+          <SectionHeader
+            title="Keyboard Style"
+            description="Choose between mechanical or flat Apple style"
+          />
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {(["normal", "magic"] as const).map((style) => {
+              const selected = keyboardStyle === style
+              return (
+                <button
+                  key={style}
+                  type="button"
+                  onClick={() => setKeyboardStyle(style)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex min-w-0 flex-col cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-center transition-colors outline-none",
+                    "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-input bg-background text-muted-foreground"
+                  )}
+                >
+                  <div className="relative flex items-center justify-center h-8">
+                    {style === "normal" ? (
+                      <KeyboardStyleNormalIcon selected={selected} />
+                    ) : (
+                      <KeyboardStyleMagicIcon selected={selected} />
+                    )}
+                  </div>
+                  <span className="w-full text-[10px] leading-tight font-medium wrap-break-word">
+                    {style === "normal" ? "Mechanical" : "Magic"}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {soundEnabled && !isMobile && (
+        <section>
+          <SectionHeader
+            title="Sound Pack"
+            description="Choose the sound your keyboard makes when you type"
+          />
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {SOUND_PACKS.map((s) => {
+              const selected = soundPack === s.id
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSoundPack(s.id)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex min-w-0 flex-col cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-center transition-colors outline-none",
+                    "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-input bg-background text-muted-foreground"
+                  )}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <SwitchIcon pack={s.id} selected={selected} />
+                    {selected && soundPackLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded bg-background/50 backdrop-blur-[1px]">
+                        <IconLoader2 className="animate-spin text-primary" size={18} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="w-full text-[10px] leading-tight font-medium wrap-break-word">
+                    {s.label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Language — kept near top so users don't have to scroll far */}
+      <section>
+        <SectionLabel>Language</SectionLabel>
+        <div className="relative mt-3">
+          <button
+            type="button"
+            onClick={() => { setLangPickerOpen((v) => !v); setLangSearch("") }}
+            className={cn(
+              "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+              "hover:bg-muted/50"
+            )}
+          >
+            <span className="min-w-0 truncate">{selectedLang?.name ?? language}</span>
+            <CaretDownIcon
+              className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", langPickerOpen && "rotate-180")}
+              weight="bold"
+            />
+          </button>
+          <AnimatePresence initial={false}>
+            {langPickerOpen && (
+              <motion.div
+                key="lang-list"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
+              >
+                <div className="border-b border-border px-2 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search languages..."
+                    value={langSearch}
+                    onChange={(e) => setLangSearch(e.target.value)}
+                    className="w-full bg-transparent text-[16px] md:text-xs outline-none placeholder:text-muted-foreground"
+                    autoFocus={false}
+                  />
                 </div>
-              </section>
-
-              <section className="flex flex-col gap-3">
-                <SectionLabel>Sound</SectionLabel>
-                <ToggleRow
-                  label="Keyboard sound"
-                  enabled={soundEnabled}
-                  onToggle={() => setSoundEnabled(!soundEnabled)}
-                  disabledReason="keyboard not available on mobile"
-                />
-                <ToggleRow
-                  label="Click sound"
-                  enabled={clickSoundEnabled}
-                  onToggle={() => setClickSoundEnabled(!clickSoundEnabled)}
-                />
-              </section>
-
-              {soundEnabled && !isMobile && (
-                <section>
-                  <SectionLabel>Sound Pack</SectionLabel>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {SOUND_PACKS.map((s) => {
-                      const selected = soundPack === s.id
-                      return (
+                <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  {(() => {
+                    const q = langSearch.trim().toLowerCase()
+                    const filtered = q
+                      ? languages.filter((l) => l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q))
+                      : languages
+                    return filtered.length > 0 ? (
+                      filtered.map((l) => (
                         <button
-                          key={s.id}
                           type="button"
-                          onClick={() => setSoundPack(s.id)}
-                          aria-pressed={selected}
+                          key={l.code}
+                          onClick={() => { setLanguage(l.code); setLangPickerOpen(false); setLangSearch("") }}
                           className={cn(
-                            "flex min-w-0 flex-col cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-center transition-colors outline-none",
-                            "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                            selected
-                              ? "border-primary bg-primary/10 text-foreground"
-                              : "border-input bg-background text-muted-foreground"
+                            "flex w-full items-center rounded-md px-2 py-1.5 text-xs text-left transition-colors",
+                            language === l.code
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           )}
                         >
-                          <div className="relative flex items-center justify-center">
-                            <SwitchIcon pack={s.id} selected={selected} />
-                            {selected && soundPackLoading && (
-                              <div className="absolute inset-0 flex items-center justify-center rounded bg-background/50 backdrop-blur-[1px]">
-                                <IconLoader2 className="animate-spin text-primary" size={18} />
-                              </div>
-                            )}
-                          </div>
-                          <span className="w-full text-[10px] leading-tight font-medium wrap-break-word">
-                            {s.label}
-                          </span>
+                          {l.name}
                         </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
+                      ))
+                    ) : (
+                      <p className="py-4 text-center text-xs text-muted-foreground">No languages found</p>
+                    )
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
 
-              <section className="flex flex-col gap-3">
-                <SectionLabel>Interface</SectionLabel>
-                <ToggleRow
-                  label="Show keyboard"
-                  enabled={showKeyboard}
-                  onToggle={() => setShowKeyboard(!showKeyboard)}
-                  disabledReason="keyboard not available on mobile"
-                />
-                <ToggleRow
-                  label="Realtime stats"
-                  enabled={realtimeWpm}
-                  onToggle={() => setRealtimeWpm(!realtimeWpm)}
-                />
-              </section>
-
-              <section className="flex flex-col gap-3">
-                <SectionLabel>Code</SectionLabel>
-                <ToggleRow
-                  label="Syntax highlighting"
-                  enabled={syntaxHighlighting}
-                  onToggle={() => setSyntaxHighlighting(!syntaxHighlighting)}
-                />
-                <ToggleRow
-                  label="Auto pair"
-                  enabled={autoPair}
-                  onToggle={() => setAutoPair(!autoPair)}
-                />
-                <ToggleRow
-                  label="Line numbers"
-                  enabled={showLineNumbers}
-                  onToggle={() => setShowLineNumbers(!showLineNumbers)}
-                />
-                {isRTL && (
-                  <ToggleRow
-                    label="Diacritics"
-                    enabled={showDiacritics}
-                    onToggle={() => setShowDiacritics(!showDiacritics)}
-                  />
+      {/* Font + Font Size side by side */}
+      <section>
+        <div className="grid grid-cols-[1.7fr_2fr] gap-4">
+          <div>
+            <SectionLabel>Font</SectionLabel>
+            <div className="relative mt-3">
+              <button
+                type="button"
+                onClick={() => { setFontPickerOpen((v) => !v); setFontSearch("") }}
+                className={cn(
+                  "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
+                  "hover:bg-muted/50"
                 )}
-              </section>
-
-              <section className="flex flex-col gap-3">
-                <SectionLabel>Modes</SectionLabel>
-                <ToggleRow
-                  label="Shake mode"
-                  enabled={shakeMode}
-                  onToggle={() => setShakeMode(!shakeMode)}
+              >
+                <span className="min-w-0 truncate" style={{ fontFamily: selectedFont?.cssFamily }}>
+                  {selectedFont?.label ?? font}
+                </span>
+                <CaretDownIcon
+                  className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", fontPickerOpen && "rotate-180")}
+                  weight="bold"
                 />
-                <ToggleRow
-                  label="Faah mode"
-                  enabled={faahMode}
-                  onToggle={() => setFaahMode(!faahMode)}
-                />
-                <ToggleRow
-                  label="Ghost mode"
-                  enabled={ghostMode}
-                  onToggle={() => setGhostMode(!ghostMode)}
-                />
-              </section>
-
-              <section>
-                <SectionLabel>Font</SectionLabel>
-                {/* Inline accordion — avoids Popover portal which vaul intercepts on mobile */}
-                <div className="relative mt-3">
-                  <button
-                    type="button"
-                    onClick={() => { setFontPickerOpen((v) => !v); setFontSearch("") }}
-                    className={cn(
-                      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
-                      "hover:bg-muted/50"
-                    )}
+              </button>
+              <AnimatePresence initial={false}>
+                {fontPickerOpen && (
+                  <motion.div
+                    key="font-list"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
                   >
-                    <span className="min-w-0 truncate" style={{ fontFamily: selectedFont?.cssFamily }}>
-                      {selectedFont?.label ?? font}
-                    </span>
-                    <CaretDownIcon
-                      className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", fontPickerOpen && "rotate-180")}
-                      weight="bold"
-                    />
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {fontPickerOpen && (
-                      <motion.div
-                        key="font-list"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
-                      >
-                        <div className="border-b border-border px-2 py-1.5">
-                          <input
-                            type="text"
-                            placeholder="Search fonts..."
-                            value={fontSearch}
-                            onChange={(e) => setFontSearch(e.target.value)}
-                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-                            autoFocus={false}
-                          />
-                        </div>
-                        <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
-                          {(() => {
-                            const q = fontSearch.trim().toLowerCase()
-                            const filtered = q
-                              ? FONT_OPTIONS.filter(
-                                  (f) =>
-                                    f.label.toLowerCase().includes(q) ||
-                                    (f.tag ?? "").toLowerCase().includes(q)
-                                )
-                              : null
+                    <div className="border-b border-border px-2 py-1.5">
+                      <input
+                        type="text"
+                        placeholder="Search fonts..."
+                        value={fontSearch}
+                        onChange={(e) => setFontSearch(e.target.value)}
+                        className="w-full bg-transparent text-[16px] md:text-xs outline-none placeholder:text-muted-foreground"
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                      {(() => {
+                        const q = fontSearch.trim().toLowerCase()
+                        const filtered = q
+                          ? FONT_OPTIONS.filter((f) => f.label.toLowerCase().includes(q) || (f.tag ?? "").toLowerCase().includes(q))
+                          : null
 
-                            const renderItem = (f: (typeof FONT_OPTIONS)[number]) => (
-                              <button
-                                type="button"
-                                key={f.id}
-                                onClick={() => { setFont(f.id); setFontPickerOpen(false); setFontSearch("") }}
-                                className={cn(
-                                  "flex w-full items-center rounded-md px-2 py-1.5 text-xs transition-colors text-left",
-                                  font === f.id
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                              >
-                                <span style={{ fontFamily: f.cssFamily }}>{f.label}</span>
-                              </button>
-                            )
+                        const renderItem = (f: (typeof FONT_OPTIONS)[number]) => (
+                          <button
+                            type="button"
+                            key={f.id}
+                            onClick={() => { setFont(f.id); setFontPickerOpen(false); setFontSearch("") }}
+                            className={cn(
+                              "flex w-full items-center rounded-md px-2 py-1.5 text-xs transition-colors text-left",
+                              font === f.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            <span style={{ fontFamily: f.cssFamily }}>{f.label}</span>
+                          </button>
+                        )
 
-                            if (filtered) {
-                              return filtered.length > 0 ? (
-                                filtered.map(renderItem)
-                              ) : (
-                                <p className="py-4 text-center text-xs text-muted-foreground">No fonts found</p>
-                              )
-                            }
+                        if (filtered) {
+                          return filtered.length > 0 ? filtered.map(renderItem) : (
+                            <p className="py-4 text-center text-xs text-muted-foreground">No fonts found</p>
+                          )
+                        }
 
-                            return (
-                              <>
-                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Mono</p>
-                                {FONT_OPTIONS.filter((f) => f.tag === "mono").map(renderItem)}
-                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Display</p>
-                                {FONT_OPTIONS.filter((f) => f.tag === "display").map(renderItem)}
-                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Serif</p>
-                                {FONT_OPTIONS.filter((f) => f.tag === "serif").map(renderItem)}
-                                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Handwriting</p>
-                                {FONT_OPTIONS.filter((f) => f.tag === "handwriting").map(renderItem)}
-                              </>
-                            )
-                          })()}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </section>
+                        return (
+                          <>
+                            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Mono</p>
+                            {FONT_OPTIONS.filter((f) => f.tag === "mono").map(renderItem)}
+                            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Display</p>
+                            {FONT_OPTIONS.filter((f) => f.tag === "display").map(renderItem)}
+                            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Serif</p>
+                            {FONT_OPTIONS.filter((f) => f.tag === "serif").map(renderItem)}
+                            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Handwriting</p>
+                            {FONT_OPTIONS.filter((f) => f.tag === "handwriting").map(renderItem)}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
 
-              <section>
-                <SectionLabel>Font Size</SectionLabel>
-                <div className="mt-3 flex gap-1.5">
-                  {FONT_SIZES.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setFontSize(s.id)}
-                      aria-pressed={fontSize === s.id}
-                      className={cn(
-                        "flex flex-1 items-center justify-center rounded-lg border py-1.5 text-[11px] font-semibold transition-colors outline-none",
-                        "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                        fontSize === s.id
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-input bg-background text-muted-foreground"
-                      )}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
+          <div>
+            <SectionLabel>Font Size</SectionLabel>
+            <div className="mt-3 grid grid-cols-5 gap-1">
+              {FONT_SIZES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setFontSize(s.id)}
+                  aria-pressed={fontSize === s.id}
+                  className={cn(
+                    "flex items-center justify-center rounded-lg border py-1.5 text-[10px] font-semibold transition-colors outline-none",
+                    "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    fontSize === s.id
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-input bg-background text-muted-foreground"
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <section>
-                <SectionLabel>Language</SectionLabel>
-                {/* Inline accordion — avoids Popover portal which vaul intercepts on mobile */}
-                <div className="relative mt-3">
-                  <button
-                    type="button"
-                    onClick={() => { setLangPickerOpen((v) => !v); setLangSearch("") }}
-                    className={cn(
-                      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-xs transition-colors outline-none",
-                      "hover:bg-muted/50"
-                    )}
-                  >
-                    <span className="min-w-0 truncate">{selectedLang?.name ?? language}</span>
-                    <CaretDownIcon
-                      className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", langPickerOpen && "rotate-180")}
-                      weight="bold"
-                    />
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {langPickerOpen && (
-                      <motion.div
-                        key="lang-list"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="absolute top-[calc(100%+4px)] left-0 w-full z-50 overflow-hidden shadow-xl rounded-lg border border-border bg-background"
-                      >
-                        <div className="border-b border-border px-2 py-1.5">
-                          <input
-                            type="text"
-                            placeholder="Search languages..."
-                            value={langSearch}
-                            onChange={(e) => setLangSearch(e.target.value)}
-                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-                            autoFocus={false}
-                          />
-                        </div>
-                        <div className="flex flex-col p-1 max-h-48 overflow-y-auto custom-scrollbar">
-                          {(() => {
-                            const q = langSearch.trim().toLowerCase()
-                            const filtered = q
-                              ? languages.filter((l) => l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q))
-                              : languages
-                            return filtered.length > 0 ? (
-                              filtered.map((l) => (
-                                <button
-                                  type="button"
-                                  key={l.code}
-                                  onClick={() => { setLanguage(l.code); setLangPickerOpen(false); setLangSearch("") }}
-                                  className={cn(
-                                    "flex w-full items-center rounded-md px-2 py-1.5 text-xs text-left transition-colors",
-                                    language === l.code
-                                      ? "bg-primary/10 text-primary"
-                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                  )}
-                                >
-                                  {l.name}
-                                </button>
-                              ))
-                            ) : (
-                              <p className="py-4 text-center text-xs text-muted-foreground">No languages found</p>
-                            )
-                          })()}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </section>
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          title="Interface"
+          description="Customize the typing test layout and display"
+        />
+        <ToggleRow
+          label="Show keyboard"
+          description="Display a keyboard at the bottom of the screen"
+          enabled={showKeyboard}
+          onToggle={() => setShowKeyboard(!showKeyboard)}
+          disabledReason="keyboard not available on mobile"
+        />
 
-              <section>
-                <SectionLabel>Cache</SectionLabel>
-                <div className="mt-3 flex flex-col gap-2">
-                  <button
-                    onClick={() => void clearSWCache()}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-input bg-background px-3 text-[11px] font-semibold tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
-                  >
-                    Clear SW Cache
-                  </button>
-                  <AnimatePresence>
-                    {cacheInfo && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="text-center text-[10px] text-primary"
-                      >
-                        {cacheInfo}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </section>
+        <ToggleRow
+          label="Realtime stats"
+          description="Show WPM and accuracy while typing"
+          enabled={realtimeWpm}
+          onToggle={() => setRealtimeWpm(!realtimeWpm)}
+        />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          title="Code"
+          description="Editor features for code snippets"
+        />
+        <ToggleRow
+          label="Syntax highlighting"
+          description="Colorize code keywords and strings"
+          enabled={syntaxHighlighting}
+          onToggle={() => setSyntaxHighlighting(!syntaxHighlighting)}
+        />
+        <ToggleRow
+          label="Auto pair"
+          description="Automatically close brackets and quotes"
+          enabled={autoPair}
+          onToggle={() => setAutoPair(!autoPair)}
+        />
+        <ToggleRow
+          label="Line numbers"
+          description="Show line numbers alongside code"
+          enabled={showLineNumbers}
+          onToggle={() => setShowLineNumbers(!showLineNumbers)}
+        />
+        {isRTL && (
+          <ToggleRow
+            label="Diacritics"
+            description="Show accent marks on characters"
+            enabled={showDiacritics}
+            onToggle={() => setShowDiacritics(!showDiacritics)}
+          />
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          title="Modes"
+          description="Fun visual effects and challenges"
+        />
+        <ToggleRow
+          label="Shake mode"
+          description="Screen shakes when you press a wrong key"
+          enabled={shakeMode}
+          onToggle={() => setShakeMode(!shakeMode)}
+        />
+        <ToggleRow
+          label="Faah mode"
+          description="Words must be typed twice to be completed"
+          enabled={faahMode}
+          onToggle={() => setFaahMode(!faahMode)}
+        />
+        <ToggleRow
+          label="Ghost mode"
+          description="Next word stays hidden until current one is typed"
+          enabled={ghostMode}
+          onToggle={() => setGhostMode(!ghostMode)}
+        />
+      </section>
+
+      <section>
+        <SectionLabel>Cache</SectionLabel>
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            onClick={() => void clearSWCache()}
+            className="flex h-8 w-full items-center justify-center rounded-lg border border-input bg-background px-3 text-[11px] font-semibold tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            Clear SW Cache
+          </button>
+          <AnimatePresence>
+            {cacheInfo && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center text-[10px] text-primary"
+              >
+                {cacheInfo}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
     </div>
   )
 
@@ -495,7 +681,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 34 }}
-            className="fixed top-0 right-0 z-50 flex h-full w-72 flex-col border-l border-border bg-background shadow-2xl"
+            className="fixed top-0 right-0 z-50 flex h-full w-[440px] flex-col border-l border-border bg-background shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
@@ -525,6 +711,8 @@ const SWITCH_STEM_COLORS: Record<SoundPack, string> = {
   "mx-speed-silver": "#c4ccd4",
   "eg-oreo": "#1a1a2e",
   "topre-purple": "#8b5cf6",
+  "creams": "#f0d9c6",
+  "banana-split-lubed": "#ffe135",
 }
 
 function SwitchIcon({ pack, selected }: { pack: SoundPack; selected: boolean }) {
@@ -603,6 +791,23 @@ function SwitchIcon({ pack, selected }: { pack: SoundPack; selected: boolean }) 
   )
 }
 
+function SectionHeader({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
+        {title}
+      </p>
+      <p className="text-[10px] text-muted-foreground/60 leading-snug">{description}</p>
+    </div>
+  )
+}
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
@@ -613,16 +818,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function ToggleRow({
   label,
+  description,
   enabled,
   onToggle,
   disabledReason,
 }: {
   label: string
+  description?: string
   enabled: boolean
   onToggle: () => void
   disabledReason?: string
 }) {
-  // Use JS window check to detect mobile (lg = 1024px)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 1024
   const isDisabled = !!disabledReason && isMobile
 
@@ -631,14 +837,21 @@ function ToggleRow({
       className="flex items-center justify-between"
       title={isDisabled ? disabledReason : undefined}
     >
-      <span
-        className={cn(
-          "text-[11px] font-semibold tracking-widest uppercase",
-          isDisabled ? "text-muted-foreground/40" : "text-muted-foreground"
+      <div className="flex flex-col gap-0.5">
+        <span
+          className={cn(
+            "text-[11px] font-semibold tracking-widest uppercase",
+            isDisabled ? "text-muted-foreground/40" : "text-muted-foreground"
+          )}
+        >
+          {label}
+        </span>
+        {description && (
+          <span className="text-[10px] text-muted-foreground/50 leading-snug">
+            {description}
+          </span>
         )}
-      >
-        {label}
-      </span>
+      </div>
       <button
         onClick={isDisabled ? undefined : onToggle}
         disabled={isDisabled}
@@ -659,5 +872,23 @@ function ToggleRow({
         />
       </button>
     </div>
+  )
+}
+
+function KeyboardStyleNormalIcon({ selected }: { selected: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" width={32} height={32} className={cn("shrink-0 transition-opacity", !selected && "opacity-80")}>
+      <rect x="6" y="6" width="36" height="36" rx="4" className="fill-muted-foreground/30" />
+      <rect x="10" y="8" width="28" height="24" rx="3" className="fill-muted-foreground/50" />
+    </svg>
+  )
+}
+
+function KeyboardStyleMagicIcon({ selected }: { selected: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" width={32} height={32} className={cn("shrink-0 transition-opacity", !selected && "opacity-80")}>
+      <rect x="4" y="16" width="40" height="16" rx="2" className="fill-muted-foreground/20 stroke-muted-foreground/40" strokeWidth="1" />
+      <rect x="6" y="18" width="36" height="12" rx="1" className="fill-muted-foreground/40" />
+    </svg>
   )
 }

@@ -10,7 +10,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "postinstall": "node -e \"const fs=require('fs');const raw=fs.readFileSync('./node_modules/inspirational-quotes/data/data.json','utf8');fs.mkdirSync('./data',{recursive:true});fs.writeFileSync('./data/quotes.json',JSON.stringify(JSON.parse(raw.replace(/^\\uFEFF/,''))));\" && node scripts/generate-code-data.mjs"
+    "postinstall": "node -e \"const fs=require('fs');const raw=fs.readFileSync('./node_modules/inspirational-quotes/data/data.json','utf8');fs.mkdirSync('./data',{recursive:true});fs.writeFileSync('./data/quotes.json',JSON.stringify(JSON.parse(raw.replace(/^\\uFEFF/,''))));\" && node scripts/generate-code-data.mjs && node scripts/sync-theme-fonts.mjs && node scripts/sync-theme-accents.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

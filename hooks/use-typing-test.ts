@@ -15,14 +15,14 @@ function customTextToWords(text: string): string[] {
   return text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
 }
 
-/** Parse raw code content into words, per-line word counts, and per-line indent levels. */
+
 function parseCodeContent(content: string): { words: string[]; lineLengths: number[]; lineIndents: number[] } {
   const lines = content.split("\n");
   const lineLengths: number[] = [];
   const lineIndents: number[] = [];
   const allWords: string[] = [];
   for (const line of lines) {
-    // Count leading spaces (treat 2 spaces or 1 tab as 1 indent unit)
+
     const leadingSpaces = line.match(/^(\s*)/)?.[1] ?? "";
     const tabCount = (leadingSpaces.match(/\t/g) ?? []).length;
     const spaceCount = leadingSpaces.replace(/\t/g, "").length;
@@ -69,7 +69,7 @@ export function useTypingTest({
   const pauseRefocusRef = useRef(false);
   pauseRefocusRef.current = pauseTypingInputRefocus;
 
-  // ── Options state ────────────────────────────────────────────────────────
+
   const [mode, setMode] = useState<TestMode>("time");
   const [timeOption, setTimeOption] = useState<TimeOption>(30);
   const [wordOption, setWordOption] = useState<WordOption>(25);
@@ -85,12 +85,12 @@ export function useTypingTest({
 
   const codeContentCache = useRef<Record<string, string>>({});
 
-  // Language word pool cache (kept in a ref so it survives re-renders)
+
   const langPoolRef = useRef<{ code: string; hard: boolean; words: string[] } | null>(null);
 
-  // ── Test state ───────────────────────────────────────────────────────────
+
   const [words, setWords] = useState<string[]>([]);
-  // codeLines: number of words per line, codeIndents: leading spaces per line
+
   const [codeLines, setCodeLines] = useState<number[]>([]);
   const [codeIndents, setCodeIndents] = useState<number[]>([]);
   const [typed, setTyped] = useState("");
@@ -110,7 +110,6 @@ export function useTypingTest({
   const [capsLock, setCapsLock] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
 
-  // ── Refs ─────────────────────────────────────────────────────────────────
   const correctCharsRef = useRef(0);
   const allTypedRef = useRef(0);
   const errorsThisSecondRef = useRef(0);
@@ -128,7 +127,7 @@ export function useTypingTest({
   const resetAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishTestRef = useRef<(() => void) | null>(null);
 
-  // ── Derived ──────────────────────────────────────────────────────────────
+
   const mtCounts = useMemo(
     () => countWpm({ targetWords: words, wordInputs, typed, wordIndex, mode, final: finished }),
     [words, wordInputs, typed, wordIndex, mode, finished],
@@ -137,14 +136,13 @@ export function useTypingTest({
   const accuracy = accuracyFromCounts(mtCounts);
   correctCharsRef.current = wpmNumerator;
 
-  // Rule 1: derive realtime WPM inline — re-computed on every render triggered
-  // by a keystroke (typed changes → re-render), no useEffect needed.
+
   const wpm = started && startTime && !finished
     ? Math.round(wpmNumerator / 5 / Math.max((Date.now() - startTime) / 1000 / 60, 1 / 60))
     : 0;
 
-  // ── finishTest ───────────────────────────────────────────────────────────
-  // Rule 3: all finish-related side effects run here, not in reactive effects.
+
+
   const finishTest = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setFinished(true);
@@ -157,12 +155,11 @@ export function useTypingTest({
 
   finishTestRef.current = finishTest;
 
-  // ── buildWords: generate words from language pool or fallback ─────────
   const buildWords = useCallback(async (
     lang: string, count: number, opts: { punctuation: boolean; numbers: boolean; difficulty: Difficulty | undefined; showDiacritics?: boolean },
   ): Promise<string[]> => {
     const isHard = opts.difficulty === "hard";
-    // Use cached pool if same language + difficulty tier
+  
     if (langPoolRef.current && langPoolRef.current.code === lang && langPoolRef.current.hard === isHard) {
       const result = generateWordsFromPool(langPoolRef.current.words, count, opts);
       return (opts.showDiacritics === false && isRTLLanguage(lang))
@@ -177,13 +174,11 @@ export function useTypingTest({
         ? result.map(stripArabicDiacritics)
         : result;
     }
-    // Fallback to random-words for English if fetch fails
+
     return generateWords(count, opts);
   }, []);
 
-  // ── resetTestWith ────────────────────────────────────────────────────────
-  // Rule 3: accepts explicit overrides so option-change handlers can reset
-  // immediately with the new value without waiting for state to commit.
+
   const resetTestWith = useCallback(async (overrides: ResetOverrides = {}) => {
     const m = overrides.mode ?? mode;
     const ql = overrides.quoteLength ?? quoteLength;
@@ -281,8 +276,6 @@ export function useTypingTest({
     }, 150);
   }, [resetTestWith]);
 
-  // ── Mount: hydrate + initialize ──────────────────────────────────────────
-  // Rule 4: one-time mount — read persisted options and build the first word set.
   useMountEffect(() => {
     const storedMode = readStoredTestMode();
     const storedTime = readStoredTimeOption();
@@ -367,7 +360,7 @@ export function useTypingTest({
     inputRef.current?.focus();
   });
 
-  // ── React to language changes from settings context ──────────────────────
+
   const prevLangRef = useRef(language);
   useEffect(() => {
     if (prevLangRef.current !== language) {
@@ -377,7 +370,7 @@ export function useTypingTest({
     }
   }, [language, resetTestWith]);
 
-  // ── Track Caps Lock state ────────────────────────────────────────────────
+  
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => setCapsLock(e.getModifierState("CapsLock"));
     window.addEventListener("keydown", onKey);
@@ -388,7 +381,7 @@ export function useTypingTest({
     };
   }, []);
 
-  // ── React to diacritics toggle changes ───────────────────────────────────
+
   const prevShowDiacriticsRef = useRef(showDiacritics);
   useEffect(() => {
     if (prevShowDiacriticsRef.current !== showDiacritics) {
@@ -397,7 +390,7 @@ export function useTypingTest({
     }
   }, [showDiacritics, resetTestWith]);
 
-  // ── Helper callbacks ─────────────────────────────────────────────────────
+
   const markTypingActive = useCallback(() => {
     setIsActivelyTyping(true);
     if (typingIdleRef.current) clearTimeout(typingIdleRef.current);
@@ -460,9 +453,6 @@ export function useTypingTest({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // IME / dead-key composition (e.g. macOS AZERTY ^ + e → ê).
-      // Skip the keydowns the browser fires during composition — the final
-      // composed character is delivered via compositionend instead.
       if (
         isComposingRef.current ||
         e.nativeEvent.isComposing ||
@@ -507,8 +497,9 @@ export function useTypingTest({
         return;
       }
 
-      // In code mode, Enter advances to the first word of the next line
-      if (e.key === "Enter" && mode === "code" && !e.shiftKey && !tabPressedRef.current) {
+    
+      const isCodeLikeMode = mode === "code" || (mode === "custom" && customCodeLanguage !== "");
+      if (e.key === "Enter" && isCodeLikeMode && !e.shiftKey && !tabPressedRef.current) {
         e.preventDefault();
         if (finished) return;
         if (!started) {
@@ -518,12 +509,11 @@ export function useTypingTest({
           onTypingActiveChange?.(true);
         }
         markTypingActive();
-        // Find the last word index of the current line
+ 
         let lineStart = 0;
         for (const lineLen of codeLines) {
           const lineEnd = lineStart + lineLen - 1;
           if (wordIndex >= lineStart && wordIndex <= lineEnd) {
-            // Commit current typed input for current word, then skip to next line
             const nextInputs = [...wordInputs];
             for (let i = wordIndex; i <= lineEnd; i++) {
               nextInputs[i] = i === wordIndex ? typed : "";
@@ -554,10 +544,9 @@ export function useTypingTest({
 
       if (finished) return;
 
-      // Don't start the test (or process further) for non-character keys like Shift, Enter, ArrowLeft, etc.
       if (e.key.length > 1 && e.key !== "Backspace") return;
 
-      // Don't start the test on Backspace when there's nothing to delete
+
       if (e.key === "Backspace" && !started && typed.length === 0) return;
 
       if (!started) {
@@ -566,8 +555,7 @@ export function useTypingTest({
         setShowControls(false);
         onTypingActiveChange?.(true);
 
-        // Rule 3: start the countdown timer here in the event handler instead
-        // of reacting to `started` changing in a useEffect.
+       
         if (mode === "time") {
           let elapsedTicks = 0;
           timerRef.current = setInterval(() => {
@@ -620,7 +608,7 @@ export function useTypingTest({
         setWordIndex(nextIndex);
         setTyped("");
         onKeyHighlight?.(null);
-        // Rule 3: measure DOM row offset after React re-renders the new active word.
+
         requestAnimationFrame(() => {
           if (!activeWordRef.current) return;
           const word = activeWordRef.current;
@@ -637,7 +625,7 @@ export function useTypingTest({
           setWordIndex((prev) => prev - 1);
           setTyped(prevInput);
           setWordInputs((prev) => prev.slice(0, -1));
-          // Recalculate scroll so the view follows back to the previous word
+     
           requestAnimationFrame(() => {
             if (!activeWordRef.current) return;
             const word = activeWordRef.current;
@@ -655,22 +643,19 @@ export function useTypingTest({
       }
 
       if (e.key.length === 1) {
-        // ── Auto-pair: in code mode, when user types an opener and the very next
-        // expected char in the word is the matching closer, skip over the closer
-        // automatically (it's already there — user just needs to type through it).
         const PAIR_MAP: Record<string, string> = {
           "(": ")", "{": "}", "[": "]", '"': '"', "'": "'", "`": "`",
         };
-        if (autoPair && mode === "code" && PAIR_MAP[e.key]) {
+        if (autoPair && isCodeLikeMode && PAIR_MAP[e.key]) {
           const closer = PAIR_MAP[e.key];
           const charIndex = typed.length;
-          // Check if the word has the closer immediately after the opener position
+         
           if (
             charIndex < currentWord.length &&
             currentWord[charIndex] === e.key &&
             currentWord[charIndex + 1] === closer
           ) {
-            // Type opener + closer together so user skips typing the closer
+        
             allTypedRef.current += 1;
             const nextTyped = typed + e.key + closer;
             setTyped(nextTyped);
@@ -709,14 +694,14 @@ export function useTypingTest({
     },
     [
       finished, started, words, codeLines, wordIndex, typed, wordInputs,
-      mode, timeOption, resetTest, finishTest, onKeyHighlight, autoPair,
+      mode, customCodeLanguage, timeOption, resetTest, finishTest, onKeyHighlight, autoPair,
       recordWordSnapshot, markTypingActive, onTypingActiveChange, onWrongKey, clearWordOrNavigateBack,
     ],
   );
 
   const handleFocus = () => {
     if (pauseRefocusRef.current) return;
-    // Don't steal focus from Monaco or any other dialog-hosted input
+
     const active = document.activeElement;
     if (active && active.closest('[role="dialog"], [data-radix-dialog-content]')) return;
     inputRef.current?.focus();
@@ -741,15 +726,12 @@ export function useTypingTest({
     (e: React.CompositionEvent<HTMLInputElement>) => {
       isComposingRef.current = false;
       const data = e.data;
-      // Re-sync the controlled input — during composition the browser may have
-      // written into the DOM input value; React won't reset it because onChange
-      // is a no-op. Without this, the next dead-key composition can produce
-      // duplicated characters in the DOM input.
+
       if (inputRef.current && inputRef.current.value !== typed) {
         inputRef.current.value = typed;
       }
       if (!data) return;
-      // Replay each composed character through the same keydown logic.
+    
       for (const ch of data) {
         handleKeyDown({
           key: ch,
@@ -765,7 +747,7 @@ export function useTypingTest({
     [handleKeyDown, typed],
   );
 
-  // ── Frozen stats (computed inline, not via effect) ────────────────────────
+
   const frozenStatsRef = useRef<ResultStats | null>(null);
 
   if (finished && !frozenStatsRef.current) {
@@ -799,7 +781,7 @@ export function useTypingTest({
   }
   if (!finished) frozenStatsRef.current = null;
 
-  // Resets all typing state but keeps the current word list (for "restart same test").
+
   const resetSameWords = useCallback(() => {
     setTyped("");
     setWordIndex(0);
@@ -823,7 +805,7 @@ export function useTypingTest({
     inputRef.current?.focus();
   }, [mode, timeOption, onFinished, onTypingActiveChange]);
 
-  // Rule 3: fade results→typing on restart, driven by user action.
+
   const handleResultsRestart = useCallback(() => {
     setScreenFade(0);
     if (screenFadeRef.current) clearTimeout(screenFadeRef.current);
@@ -861,7 +843,7 @@ export function useTypingTest({
     }, 150);
   }, [resetTestImmediate, resetTestWith, mode, codeLanguage, codeChapter]);
 
-  // ── Option-change handlers (Rule 3) ──────────────────────────────────────
+
   const onModeChange = useCallback((next: TestMode) => {
     setMode(next);
     localStorage.setItem(TEST_MODE_STORAGE_KEY, next);
@@ -949,19 +931,19 @@ const onCodeLanguageChange = useCallback((next: string) => {
   const showResults = finished && frozenStatsRef.current;
 
   return {
-    // State
+
     mode, timeOption, wordOption, quoteLength, quoteAuthor,
     punctuation, numbers, difficulty, customText, customCodeLanguage,
     codeLanguage, codeChapter,
     words, codeLines, codeIndents, typed, wordIndex, started, rowOffset, finished,
     timeLeft, wordInputs, showControls, isFocused, resetting, isActivelyTyping,
     screenFade, wpm, accuracy, capsLock, codeLoading,
-    // Computed
+
     isRTL,
     controlsVisible, showResults, frozenStats: frozenStatsRef.current,
-    // Refs
+
     inputRef, wordsContainerRef, activeWordRef,
-    // Handlers
+
     handleKeyDown, handleFocus, handleInputBlur, handleInputFocus,
     handleCompositionStart, handleCompositionEnd,
     handleMouseMove, handleResultsRestart, handleResultsNext,

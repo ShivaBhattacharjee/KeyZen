@@ -1040,6 +1040,119 @@ const JAPANESE_KATAKANA_LAYOUT: KeyboardLayout = {
 };
 
 // ---------------------------------------------------------------------------
+// Chinese – Zhuyin (Bopomofo)
+// ---------------------------------------------------------------------------
+
+const ZHUYIN_LAYOUT: KeyboardLayout = {
+  Digit1: ["ㄅ"],
+  Digit2: ["ㄉ"],
+  Digit3: ["ˇ"],
+  Digit4: ["ˋ"],
+  Digit5: ["ㄓ"],
+  Digit6: ["ˊ"],
+  Digit7: ["˙"],
+  Digit8: ["ㄚ"],
+  Digit9: ["ㄞ"],
+  Digit0: ["ㄢ"],
+  Minus: ["ㄦ"],
+  KeyQ: ["ㄆ"],
+  KeyW: ["ㄊ"],
+  KeyE: ["ㄍ"],
+  KeyR: ["ㄐ"],
+  KeyT: ["ㄔ"],
+  KeyY: ["ㄗ"],
+  KeyU: ["ㄧ"],
+  KeyI: ["ㄛ"],
+  KeyO: ["ㄟ"],
+  KeyP: ["ㄣ"],
+  KeyA: ["ㄇ"],
+  KeyS: ["ㄋ"],
+  KeyD: ["ㄎ"],
+  KeyF: ["ㄑ"],
+  KeyG: ["ㄕ"],
+  KeyH: ["ㄘ"],
+  KeyJ: ["ㄨ"],
+  KeyK: ["ㄜ"],
+  KeyL: ["ㄠ"],
+  Semicolon: ["ㄤ"],
+  Quote: ["ㄦ"],
+  KeyZ: ["ㄈ"],
+  KeyX: ["ㄌ"],
+  KeyC: ["ㄏ"],
+  KeyV: ["ㄒ"],
+  KeyB: ["ㄖ"],
+  KeyN: ["ㄙ"],
+  KeyM: ["ㄩ"],
+  Comma: ["ㄝ"],
+  Period: ["ㄡ"],
+  Slash: ["ㄥ"],
+};
+
+// ---------------------------------------------------------------------------
+// Chinese – Cangjie
+// ---------------------------------------------------------------------------
+
+const CANGJIE_LAYOUT: KeyboardLayout = {
+  KeyA: ["日"],
+  KeyB: ["月"],
+  KeyC: ["金"],
+  KeyD: ["木"],
+  KeyE: ["水"],
+  KeyF: ["火"],
+  KeyG: ["土"],
+  KeyH: ["竹"],
+  KeyI: ["戈"],
+  KeyJ: ["十"],
+  KeyK: ["大"],
+  KeyL: ["中"],
+  KeyM: ["一"],
+  KeyN: ["弓"],
+  KeyO: ["人"],
+  KeyP: ["心"],
+  KeyQ: ["手"],
+  KeyR: ["口"],
+  KeyS: ["尸"],
+  KeyT: ["廿"],
+  KeyU: ["山"],
+  KeyV: ["女"],
+  KeyW: ["田"],
+  KeyX: ["難"],
+  KeyY: ["卜"],
+};
+
+// ---------------------------------------------------------------------------
+// Chinese – Wubi 86
+// ---------------------------------------------------------------------------
+
+const WUBI_LAYOUT: KeyboardLayout = {
+  KeyG: ["王"],
+  KeyF: ["土"],
+  KeyD: ["大"],
+  KeyS: ["木"],
+  KeyA: ["工"],
+  KeyH: ["目"],
+  KeyJ: ["日"],
+  KeyK: ["口"],
+  KeyL: ["田"],
+  KeyM: ["山"],
+  KeyT: ["禾"],
+  KeyR: ["白"],
+  KeyE: ["月"],
+  KeyW: ["人"],
+  KeyQ: ["金"],
+  KeyY: ["言"],
+  KeyU: ["立"],
+  KeyI: ["水"],
+  KeyO: ["火"],
+  KeyP: ["之"],
+  KeyN: ["已"],
+  KeyB: ["子"],
+  KeyV: ["女"],
+  KeyC: ["又"],
+  KeyX: ["纟"],
+};
+
+// ---------------------------------------------------------------------------
 // Languages that use standard QWERTY with no changes
 // ---------------------------------------------------------------------------
 
@@ -1085,6 +1198,11 @@ const LANGUAGE_LAYOUTS: Record<string, KeyboardLayout> = {
   indonesian: QWERTY_LAYOUT,
   vietnamese: QWERTY_LAYOUT,
   malay: QWERTY_LAYOUT,
+  chinese_simplified: QWERTY_LAYOUT,
+  chinese_simplified_wubi: WUBI_LAYOUT,
+  chinese_traditional: QWERTY_LAYOUT,
+  chinese_traditional_zhuyin: ZHUYIN_LAYOUT,
+  chinese_traditional_cangjie: CANGJIE_LAYOUT,
 };
 
 /**

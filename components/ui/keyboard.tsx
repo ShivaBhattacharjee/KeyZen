@@ -103,7 +103,7 @@ export function Keyboard({
       layout={layout}
       onAudioLoadingChange={onAudioLoadingChange}
     >
-      <div ref={containerRef} className={cn("inline-block", className)}>
+      <div ref={containerRef} className={cn("inline-block [zoom:0.55] sm:[zoom:0.7] md:[zoom:0.65] lg:[zoom:0.85] xl:[zoom:1.15]", className)}>
         <KeyboardKeys />
       </div>
     </KeyboardProvider>
@@ -221,16 +221,16 @@ function KeyboardProvider({
         const fetchRawBuffer = rawBufferCache.has(soundUrl)
           ? Promise.resolve(rawBufferCache.get(soundUrl)!)
           : fetch(soundUrl)
-              .then((r) => (r.ok ? r.arrayBuffer() : null))
-              .then((ab) => { if (ab) rawBufferCache.set(soundUrl, ab); return ab; });
+            .then((r) => (r.ok ? r.arrayBuffer() : null))
+            .then((ab) => { if (ab) rawBufferCache.set(soundUrl, ab); return ab; });
 
         const fetchConfig = soundConfigUrl
           ? rawConfigCache.has(soundConfigUrl)
             ? Promise.resolve(rawConfigCache.get(soundConfigUrl))
             : fetch(soundConfigUrl)
-                .then((r) => (r.ok ? r.json() : null))
-                .then((cfg) => { if (cfg) rawConfigCache.set(soundConfigUrl, cfg); return cfg; })
-                .catch(() => null)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((cfg) => { if (cfg) rawConfigCache.set(soundConfigUrl, cfg); return cfg; })
+              .catch(() => null)
           : Promise.resolve(null);
 
         const spriteBufferPromise = fetchRawBuffer.then((ab) =>
@@ -1153,9 +1153,9 @@ function toRgba(color: string, alpha: number): string {
   const value = color.slice(1);
   const hex = value.length === 3
     ? value
-        .split("")
-        .map((char) => `${char}${char}`)
-        .join("")
+      .split("")
+      .map((char) => `${char}${char}`)
+      .join("")
     : value;
 
   if (hex.length !== 6) {

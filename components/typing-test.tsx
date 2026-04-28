@@ -308,12 +308,12 @@ export function TypingTest(props: TypingTestProps) {
           className={cn(
             "relative w-full leading-relaxed",
             isCodeRendering ? "overflow-x-auto overflow-y-hidden no-scrollbar" : "overflow-hidden",
-            "h-[7.8rem]",
             isActivelyTyping && "is-typing"
           )}
           style={{
             fontFamily: "var(--typing-font)",
             fontSize: fontSizeRem,
+            height: "calc(4.875em + 0.5rem)",
           }}
         >
           <input
@@ -325,7 +325,7 @@ export function TypingTest(props: TypingTestProps) {
             onBlur={handleInputBlur}
             onFocus={handleInputFocus}
             value={typed}
-            onChange={() => {}}
+            onChange={() => { }}
             autoFocus
             autoComplete="off"
             autoCorrect="off"

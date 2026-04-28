@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { cn } from "@/lib/utils"
 import { useAppChrome } from "@/components/app-chrome"
 import { Keyboard } from "@/components/ui/keyboard"
+import { Keyboard as MagicKeyboard } from "@/components/ui/magic-keyboard"
 import { TypingTest } from "@/components/typing-test"
 import { useSettings, SOUND_PACKS } from "@/components/settings-context"
 import { Loading } from "@/components/ui/loader"
@@ -16,7 +17,7 @@ export default function Page() {
     const [typingFocused, setTypingFocused] = useState(true)
     const [restartKey, setRestartKey] = useState(0)
     const [mode, setMode] = useState<string>("time")
-    const { showKeyboard, soundEnabled, soundPack, language, setSoundPackLoading, settingsLoaded } = useSettings()
+    const { showKeyboard, keyboardStyle, soundEnabled, soundPack, language, setSoundPackLoading, settingsLoaded } = useSettings()
     const soundPackOption = SOUND_PACKS.find((s) => s.id === soundPack)
     const soundUrl = soundPackOption?.url ?? "/sounds/sound.ogg"
     const soundConfigUrl = soundPackOption?.configUrl
@@ -41,8 +42,12 @@ export default function Page() {
         [setTypingActive],
     )
 
-    // Guard callbacks so they only trigger Page re-renders when values actually change
     const finishedRef = useRef(isFinished)
+ 
+    useEffect(() => {
+        finishedRef.current = isFinished
+    }, [isFinished])
+
     const handleFinished = useCallback((finished: boolean) => {
         if (finishedRef.current === finished) return
         finishedRef.current = finished
@@ -123,18 +128,31 @@ export default function Page() {
                                 : "invisible h-0 overflow-hidden border-0",
                         )}
                     >
-                        <div className="scale-[0.85]">
-                            <Keyboard
-                                theme="classic"
-                                enableHaptics
-                                enableSound={soundEnabled}
-                                soundUrl={soundUrl}
-                                soundConfigUrl={soundConfigUrl}
-                                forceActive={soundEnabled && !showKeyboard}
-                                physicalKeysEnabled={typingFocused}
-                                language={language}
-                                onAudioLoadingChange={setSoundPackLoading}
-                            />
+                        <div className="[zoom:0.85]">
+                            {keyboardStyle === "magic" ? (
+                                <MagicKeyboard
+                                    enableHaptics
+                                    enableSound={soundEnabled}
+                                    soundUrl={soundUrl}
+                                    soundConfigUrl={soundConfigUrl}
+                                    forceActive={soundEnabled && !showKeyboard}
+                                    physicalKeysEnabled={typingFocused}
+                                    language={language}
+                                    onAudioLoadingChange={setSoundPackLoading}
+                                />
+                            ) : (
+                                <Keyboard
+                                    theme="classic"
+                                    enableHaptics
+                                    enableSound={soundEnabled}
+                                    soundUrl={soundUrl}
+                                    soundConfigUrl={soundConfigUrl}
+                                    forceActive={soundEnabled && !showKeyboard}
+                                    physicalKeysEnabled={typingFocused}
+                                    language={language}
+                                    onAudioLoadingChange={setSoundPackLoading}
+                                />
+                            )}
                         </div>
                     </footer>
                 )}

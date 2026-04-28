@@ -250,6 +250,20 @@ export function ResultsScreen({ stats, onRestart, onNext }: ResultsScreenProps) 
   }, [mode, stats.language]);
 
   useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        onRestart();
+      } else if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        onNext();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onNext, onRestart]);
+
+  useEffect(() => {
     if (!invalid && pb?.isNewPb) {
       const timer = setTimeout(() => {
         confettiRef.current?.fire({

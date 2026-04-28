@@ -339,6 +339,108 @@
   --primary: oklch(0.72 0.18 285);
   --ring: oklch(0.58 0.14 285);
 }
+/* Auto-synced theme accents start */
+
+/* de-swiss-design */
+:root[data-accent="de-swiss-design"] {
+  --primary: hsl(0, 100%, 43%);
+  --ring: oklch(0.5799 0.2380 29.2339);
+}
+
+:root.dark[data-accent="de-swiss-design"] {
+  --primary: oklch(0.6280 0.2577 29.2339);
+  --ring: oklch(0.6280 0.2577 29.2339);
+}
+
+/* efferd */
+:root[data-accent="efferd"] {
+  --primary: oklch(0.2050 0 0);
+  --ring: oklch(0.8000 0 0);
+}
+
+:root.dark[data-accent="efferd"] {
+  --primary: oklch(0.9900 0 0);
+  --ring: oklch(0.5560 0 0);
+}
+
+/* melancholik-mint */
+:root[data-accent="melancholik-mint"] {
+  --primary: oklch(0.3211 0 0);
+  --ring: oklch(0.3211 0 0);
+}
+
+:root.dark[data-accent="melancholik-mint"] {
+  --primary: oklch(0.7193 0.0439 196.2166);
+  --ring: oklch(0.7193 0.0439 196.2166);
+}
+
+/* vermillion */
+:root[data-accent="vermillion"] {
+  --primary: oklch(0.5895 0.1791 31.9223);
+  --ring: oklch(0.5895 0.1791 31.9223);
+}
+
+:root.dark[data-accent="vermillion"] {
+  --primary: oklch(0.5895 0.1791 31.9223);
+  --ring: oklch(0.5895 0.1791 31.9223);
+}
+
+/* autoblog */
+:root[data-accent="autoblog"] {
+  --primary: oklch(0.6404 0.2153 35.9003);
+  --ring: oklch(0.6404 0.2153 35.9003);
+}
+
+:root.dark[data-accent="autoblog"] {
+  --primary: oklch(0.6404 0.2153 35.9003);
+  --ring: oklch(0.6404 0.2153 35.9003);
+}
+
+/* claude */
+:root[data-accent="claude"] {
+  --primary: oklch(0.6171 0.1375 39.0427);
+  --ring: oklch(0.6171 0.1375 39.0427);
+}
+
+:root.dark[data-accent="claude"] {
+  --primary: oklch(0.6724 0.1308 38.7559);
+  --ring: oklch(0.6724 0.1308 38.7559);
+}
+
+/* offworld */
+:root[data-accent="offworld"] {
+  --primary: oklch(0.2178 0 0);
+  --ring: oklch(0.2178 0 0);
+}
+
+:root.dark[data-accent="offworld"] {
+  --primary: oklch(0.9927 0.0364 107.0448);
+  --ring: oklch(0.9927 0.0364 107.0448);
+}
+
+/* shopify-red */
+:root[data-accent="shopify-red"] {
+  --primary: oklch(0.5778 0.2282 26.5713);
+  --ring: oklch(0.5778 0.2282 26.5713);
+}
+
+:root.dark[data-accent="shopify-red"] {
+  --primary: oklch(0.5778 0.2282 26.5713);
+  --ring: oklch(0.5778 0.2282 26.5713);
+}
+
+/* t3chat */
+:root[data-accent="t3chat"] {
+  --primary: oklch(0.5316 0.1409 355.1999);
+  --ring: oklch(0.5916 0.2180 0.5844);
+}
+
+:root.dark[data-accent="t3chat"] {
+  --primary: oklch(0.4607 0.1853 4.0994);
+  --ring: oklch(0.5916 0.2180 0.5844);
+}
+
+/* Auto-synced theme accents end */
 
 /* ── Typing font ──────────────────────────────────────────────── */
 :root {

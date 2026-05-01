@@ -21,7 +21,7 @@ export const CUSTOM_CODE_LANGUAGE_STORAGE_KEY = "tc-custom-code-language"
 export const DEFAULT_CUSTOM_TEXT =
   "Never gonna give you up, never gonna let you down Never gonna run around and desert you Never gonna make you cry, never gonna say goodbye Never gonna tell a lie and hurt you"
 
-const VALID_TEST_MODES: readonly TestMode[] = [ "time", "words", "quote", "zen", "custom", "code", ]
+const VALID_TEST_MODES: readonly TestMode[] = [ "time", "words", "quote", "zen", "custom", "code", "multiplayer" ]
 const VALID_TIME_OPTIONS: readonly TimeOption[] = [15, 30, 60, 120]
 const VALID_WORD_OPTIONS: readonly WordOption[] = [10, 25, 50, 100]
 const VALID_QUOTE_LENGTHS: readonly QuoteLength[] = ["short", "medium", "long"]

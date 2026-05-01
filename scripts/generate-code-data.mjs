@@ -24,6 +24,7 @@ const LANG_NAMES = {
   php: "PHP",
   sql: "SQL",
   ruby: "Ruby",
+  csharp: "C#",
 };
 
 const LANG_EXT = {
@@ -41,6 +42,7 @@ const LANG_EXT = {
   php: "php",
   sql: "sql",
   ruby: "rb",
+  csharp: "cs",
 };
 
 async function main() {

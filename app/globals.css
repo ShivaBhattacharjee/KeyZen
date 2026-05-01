@@ -450,6 +450,18 @@
   --ring: oklch(0.5916 0.2180 0.5844);
 }
 
+
+/* neon-nights */
+:root[data-accent="neon-nights"] {
+  --primary: oklch(0.6 0.3 330);
+  --ring: oklch(0.6 0.3 330);
+}
+
+:root.dark[data-accent="neon-nights"] {
+  --primary: oklch(0.7 0.3 190);
+  --ring: oklch(0.7 0.3 190);
+}
+
 /* Auto-synced theme accents end */
 
 /* ── Typing font ──────────────────────────────────────────────── */

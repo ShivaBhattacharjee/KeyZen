@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SettingsProvider } from "@/components/settings-context"
 import { siteConfig } from "@/lib/site"
 import { cn } from "@/lib/utils"
+import { MultiplayerProvider } from "@/components/multiplayer-context"
 
 const spaceGrotesk = Space_Grotesk({subsets:['latin'],variable:'--font-sans'})
 
@@ -94,7 +95,9 @@ export default function RootLayout({
         </noscript>
         <ThemeProvider>
           <SettingsProvider>
-            <AppChrome>{children}</AppChrome>
+            <MultiplayerProvider>
+              <AppChrome>{children}</AppChrome>
+            </MultiplayerProvider>
           </SettingsProvider>
         </ThemeProvider>
       </body>

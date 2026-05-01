@@ -3,7 +3,8 @@
 import { memo, useEffect, useState } from "react";
 import { useAppChrome } from "@/components/app-chrome";
 import { motion, AnimatePresence } from "motion/react";
-import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, } from "@tabler/icons-react";
+import { IconAt, IconClock, IconLetterA, IconQuote, IconMountain, IconNumber, IconFeather, IconFlame, IconTool, IconPencil, IconAdjustments, IconX, IconCode, IconUsers, } from "@tabler/icons-react";
+import { useMultiplayer } from "@/components/multiplayer-context";
 import { CustomTextDialog } from "@/components/custom-text-dialog";
 import { CustomTimeDialog } from "@/components/custom-time-dialog";
 import type { QuoteLength } from "@/lib/quotes";
@@ -67,6 +68,7 @@ export const TestControls = memo(function TestControls({
   const [customVal, setCustomVal] = useState("");
   const [wordPopoverOpen, setWordPopoverOpen] = useState(false);
   const { setTestSettingsOpen } = useAppChrome();
+  const { status, searchForMatch, leaveRoom, room, startRace } = useMultiplayer();
 
   const setDrawerOpen = (open: boolean) => {
     setDrawerOpenState(open);
@@ -196,6 +198,7 @@ export const TestControls = memo(function TestControls({
             { value: "quote", icon: IconQuote, label: "quote" },
             { value: "zen", icon: IconMountain, label: "zen" },
             { value: "code", icon: IconCode, label: "code" },
+            { value: "multiplayer", icon: IconUsers, label: "race" },
             { value: "custom", icon: IconTool, label: "custom" },
           ] as const).map(({ value, icon: Icon, label }) => (
             <button
@@ -427,6 +430,52 @@ export const TestControls = memo(function TestControls({
                   />
                 </div>
             )}
+
+            {mode === "multiplayer" && (
+              <div className="flex flex-col gap-3">
+                {status === "idle" ? (
+                  <button
+                    type="button"
+                    onClick={searchForMatch}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-95"
+                  >
+                    <IconUsers size={18} />
+                    FIND A RACE
+                  </button>
+                ) : status === "searching" ? (
+                   <div className="flex flex-col items-center gap-3 py-4">
+                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                     <span className="text-xs font-medium text-muted-foreground animate-pulse">Searching for opponents...</span>
+                     <button onClick={leaveRoom} className="text-[10px] uppercase tracking-wider text-destructive hover:underline">Cancel</button>
+                   </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                      <span>Players ({room?.players.length}/4)</span>
+                      <span className="text-primary">{status}</span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {room?.players.map(p => (
+                        <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-zinc-200/50 dark:bg-zinc-700/50 px-3 py-2">
+                          <span className={cn("text-xs font-medium", p.isMe && "text-primary")}>{p.name} {p.isMe && "(You)"}</span>
+                          {p.isHost && <span className="text-[9px] bg-primary/20 text-primary px-1.5 rounded uppercase">Host</span>}
+                        </div>
+                      ))}
+                    </div>
+                    {status === "waiting" && room?.players.find(p => p.isMe)?.isHost && (
+                       <button
+                         onClick={startRace}
+                         disabled={room.players.length < 2}
+                         className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                       >
+                         START RACE
+                       </button>
+                    )}
+                    <button onClick={leaveRoom} className="text-xs text-muted-foreground hover:text-destructive">Leave Room</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -573,6 +622,7 @@ export const TestControls = memo(function TestControls({
                 { value: "quote", icon: IconQuote, label: "quote" },
                 { value: "zen", icon: IconMountain, label: "zen" },
                 { value: "code", icon: IconCode, label: "code" },
+                { value: "multiplayer", icon: IconUsers, label: "race" },
                 { value: "custom", icon: IconTool, label: "custom" },
               ] as const).map(({ value, icon: Icon, label }) => (
                 <TabsTrigger key={value} value={value} className="gap-1.5 px-3 text-xs cursor-pointer">
@@ -648,9 +698,35 @@ export const TestControls = memo(function TestControls({
                     }
                   />
                 </div>
-              ) : mode === "code" ? (
-                codeSelectors
-              ) : (
+                ) : mode === "multiplayer" ? (
+                  <div className="flex items-center gap-3">
+                     {status === "idle" ? (
+                        <button onClick={searchForMatch} className="px-4 h-9 rounded-lg bg-primary text-[11px] font-bold text-primary-foreground hover:opacity-90 active:scale-95 transition-all">
+                          FIND RACE
+                        </button>
+                     ) : status === "searching" ? (
+                        <div className="flex items-center gap-2 px-3">
+                          <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
+                          <span className="text-[11px] text-muted-foreground">Searching...</span>
+                          <button onClick={leaveRoom} className="text-[10px] text-destructive hover:underline ml-2">X</button>
+                        </div>
+                     ) : (
+                        <div className="flex items-center gap-3">
+                           <div className="flex -space-x-2">
+                             {room?.players.map(p => (
+                               <div key={p.id} className={cn("h-7 w-7 rounded-full border-2 border-background bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold", p.isMe && "border-primary text-primary")} title={p.name}>
+                                 {p.name[0]}
+                               </div>
+                             ))}
+                           </div>
+                           {status === "waiting" && room?.players.find(p => p.isMe)?.isHost && (
+                              <button onClick={startRace} disabled={room.players.length < 2} className="px-3 h-7 rounded bg-primary text-[10px] font-bold text-primary-foreground disabled:opacity-50">START</button>
+                           )}
+                           <button onClick={leaveRoom} className="text-[10px] text-muted-foreground hover:text-destructive">LEAVE</button>
+                        </div>
+                     )}
+                  </div>
+                ) : (
                 <Tabs value={![15, 30, 60, 120].includes(timeOption) ? "custom" : String(timeOption)} onValueChange={(v) => { if (v !== "custom") onTimeOptionChange(Number(v)) }} className="flex items-center">
                   <TabsList>
                     {[15, 30, 60, 120].map((t) => (

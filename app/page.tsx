@@ -122,7 +122,7 @@ export default function Page() {
                 {!isFinished && (
                     <footer
                         className={cn(
-                            "hidden items-center justify-center border-t border-border lg:flex",
+                            "flex items-center justify-center border-t border-border py-4 lg:py-0",
                             showKeyboard
                                 ? "flex-1 flex-col"
                                 : "invisible h-0 overflow-hidden border-0",

@@ -43,7 +43,9 @@ export type AccentColor =
   | "cyan" | "pink" | "indigo" | "lime" | "violet" | "lightgreen" | "sky"
   | "coral" | "mint" | "gold" | "lavender"
   // Auto-synced from themes
-  | "de-swiss-design" | "efferd" | "melancholik-mint" | "vermillion" | "autoblog" | "claude" | "offworld" | "shopify-red" | "t3chat";
+  | "de-swiss-design" | "efferd" | "melancholik-mint" | "vermillion" | "autoblog" | "claude" | "offworld" | "shopify-red" | "t3chat"
+  // Auto-synced from themes
+  | "neon-nights";
 
 export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[] = [
   { id: "teal",       label: "Teal",        swatch: "oklch(0.55 0.13 200)" },
@@ -75,6 +77,8 @@ export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[]
   { id: "offworld", label: "Offworld", swatch: "oklch(0.2178 0 0)" },
   { id: "shopify-red", label: "Shopify Red", swatch: "oklch(0.5778 0.2282 26.5713)" },
   { id: "t3chat", label: "T3chat", swatch: "oklch(0.5316 0.1409 355.1999)" },
+  // Auto-synced from themes
+  { id: "neon-nights", label: "Neon Nights", swatch: "oklch(0.6 0.3 330)" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,13 @@
+:root {
+  --background: oklch(0.98 0.01 280);
+  --foreground: oklch(0.2 0.01 280);
+  --primary: oklch(0.6 0.3 330);
+  --ring: oklch(0.6 0.3 330);
+}
+
+.dark {
+  --background: oklch(0.1 0.01 280);
+  --foreground: oklch(0.98 0.01 280);
+  --primary: oklch(0.7 0.3 190);
+  --ring: oklch(0.7 0.3 190);
+}

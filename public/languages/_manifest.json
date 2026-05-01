@@ -188,5 +188,20 @@
     "name": "Japanese (Romaji)",
     "code": "japanese_romaji",
     "has1k": true
+  },
+  {
+    "name": "Marathi",
+    "code": "marathi",
+    "has1k": false
+  },
+  {
+    "name": "Gujarati",
+    "code": "gujarati",
+    "has1k": false
+  },
+  {
+    "name": "Kannada",
+    "code": "kannada",
+    "has1k": false
   }
 ]

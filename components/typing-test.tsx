@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils"
 import { useShikiTokens } from "@/hooks/use-shiki";
 import { CODE_MANIFEST, getCodeContent } from "@/lib/code";
 import { useTheme } from "next-themes"
+import { useMultiplayer } from "@/components/multiplayer-context"
+import { type TestMode } from "@/lib/test-storage"
 
 interface TypingTestProps {
   onKeyHighlight?: (key: string | null) => void
@@ -109,8 +111,17 @@ export function TypingTest(props: TypingTestProps) {
     onRestart,
   } = useTypingTest({ ...props, onWrongKey })
 
+  const { room, status, updateProgress } = useMultiplayer();
+
+  useEffect(() => {
+    if (mode === "multiplayer" && status === "racing") {
+      const progress = words.length > 0 ? wordIndex / words.length : 0;
+      updateProgress(progress, wpm, accuracy);
+    }
+  }, [wordIndex, wpm, accuracy, mode, status, words.length, updateProgress]);
+
   const onModeChange = useCallback((next: string) => {
-    onModeChangeInternal(next as Parameters<typeof onModeChangeInternal>[0])
+    onModeChangeInternal(next as TestMode)
     props.onModeChange?.(next)
   }, [onModeChangeInternal, props])
 
@@ -263,6 +274,30 @@ export function TypingTest(props: TypingTestProps) {
           animate={{ opacity: resetting ? 0 : 1 }}
           transition={{ duration: 0.15 }}
         >
+          {/* Multiplayer Progress Bars */}
+          {mode === "multiplayer" && room && (
+            <div className="absolute top-0 left-0 right-0 -translate-y-full pb-8 flex flex-col gap-2">
+              {room.players.map(p => (
+                <div key={p.id} className="flex items-center gap-3">
+                  <div className="w-20 truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {p.name}
+                  </div>
+                  <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200/50 dark:bg-zinc-800/50">
+                    <motion.div
+                      className={cn("h-full bg-primary", p.isMe && "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]")}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${p.progress * 100}%` }}
+                      transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    />
+                  </div>
+                  <div className="w-12 text-right font-mono text-[10px] text-muted-foreground">
+                    {Math.round(p.progress * 100)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex min-w-0 items-center gap-5">
             {mode === "time" && (
               <span
@@ -470,6 +505,20 @@ export function TypingTest(props: TypingTestProps) {
           </LayoutGroup>
 
           <AnimatePresence>
+            {mode === "multiplayer" && status === "starting" && room?.countdown !== undefined && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.5 }}
+                className="absolute inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm"
+              >
+                <div className="flex flex-col items-center gap-4">
+                   <span className="text-8xl font-bold text-primary animate-pulse">{room.countdown}</span>
+                   <span className="text-sm font-medium uppercase tracking-[0.3em] text-muted-foreground">Race Starting</span>
+                </div>
+              </motion.div>
+            )}
+
             {!isFocused && (
               <motion.div
                 key="focus-overlay"

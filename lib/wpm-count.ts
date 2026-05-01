@@ -1,5 +1,5 @@
 
-export type WpmCountMode = "time" | "words" | "quote" | "zen" | "code" | "custom"
+export type WpmCountMode = "time" | "words" | "quote" | "zen" | "code" | "custom" | "multiplayer"
 
 export interface WpmCounts {
   correctWordChars: number

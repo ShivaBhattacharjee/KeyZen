@@ -1,7 +1,7 @@
 import type { QuoteLength } from "@/lib/quotes"
 import type { Difficulty } from "@/lib/words"
 
-export type TestMode = "time" | "words" | "quote" | "zen" | "code" | "custom"
+export type TestMode = "time" | "words" | "quote" | "zen" | "code" | "custom" | "multiplayer"
 export type TimeOption = number
 export type WordOption = number
 

@@ -9,6 +9,7 @@ import { CustomTextDialog } from "@/components/custom-text-dialog";
 import { CustomTimeDialog } from "@/components/custom-time-dialog";
 import type { QuoteLength } from "@/lib/quotes";
 import type { Difficulty } from "@/lib/words";
+import type { Player } from "@/lib/multiplayer";
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, } from "@/components/animate-ui/components/animate/tabs";
@@ -204,7 +205,7 @@ export const TestControls = memo(function TestControls({
             <button
               key={value}
               type="button"
-              onClick={() => onModeChange(value)}
+              onClick={(e: React.MouseEvent) => { e.preventDefault(); onModeChange(value as TestMode); }}
               className={drawerBtnClass(mode === value)}
             >
               <Icon size={18} />
@@ -301,7 +302,7 @@ export const TestControls = memo(function TestControls({
                   {/* Language picker — inline accordion (Popover portals are intercepted by vaul on mobile) */}
                   <button
                     type="button"
-                    onClick={() => { setLangPickerOpen((v) => !v); setLangSearch(""); }}
+                    onClick={() => { setLangPickerOpen((v: boolean) => !v); setLangSearch(""); }}
                     className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground cursor-pointer"
                   >
                     <span className="truncate">
@@ -366,7 +367,7 @@ export const TestControls = memo(function TestControls({
                   <button
                     type="button"
                     disabled={!codeLanguage || !codeManifest[codeLanguage]}
-                    onClick={() => setChapterPickerOpen((v) => !v)}
+                    onClick={() => setChapterPickerOpen((v: boolean) => !v)}
                     className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="truncate">
@@ -455,14 +456,14 @@ export const TestControls = memo(function TestControls({
                       <span className="text-primary">{status}</span>
                     </div>
                     <div className="flex flex-col gap-2">
-                      {room?.players.map(p => (
+                      {room?.players.map((p: Player) => (
                         <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-zinc-200/50 dark:bg-zinc-700/50 px-3 py-2">
                           <span className={cn("text-xs font-medium", p.isMe && "text-primary")}>{p.name} {p.isMe && "(You)"}</span>
                           {p.isHost && <span className="text-[9px] bg-primary/20 text-primary px-1.5 rounded uppercase">Host</span>}
                         </div>
                       ))}
                     </div>
-                    {status === "waiting" && room?.players.find(p => p.isMe)?.isHost && (
+                    {status === "waiting" && room?.players.find((p: Player) => p.isMe)?.isHost && (
                        <button
                          onClick={startRace}
                          disabled={room.players.length < 2}
@@ -614,7 +615,7 @@ export const TestControls = memo(function TestControls({
           })()}
 
           {/* Mode tabs */}
-          <Tabs value={mode} onValueChange={(v) => onModeChange(v as TestMode)} className="flex items-center">
+          <Tabs value={mode} onValueChange={(v: string) => onModeChange(v as TestMode)} className="flex items-center">
             <TabsList>
               {([
                 { value: "time", icon: IconClock, label: "time" },
@@ -638,7 +639,7 @@ export const TestControls = memo(function TestControls({
               <div className="hidden h-4 w-px shrink-0 bg-border sm:block" />
 
               {mode === "words" ? (
-                <Tabs value={![10, 25, 50, 100].includes(wordOption) ? "custom" : String(wordOption)} onValueChange={(v) => { if (v !== "custom") onWordOptionChange(Number(v)) }} className="flex items-center">
+                <Tabs value={![10, 25, 50, 100].includes(wordOption) ? "custom" : String(wordOption)} onValueChange={(v: string) => { if (v !== "custom") onWordOptionChange(Number(v)) }} className="flex items-center">
                   <TabsList>
                     {[10, 25, 50, 100].map((w) => (
                       <TabsTrigger key={w} value={String(w)} className="px-3 text-xs cursor-pointer">{w}</TabsTrigger>
@@ -674,7 +675,7 @@ export const TestControls = memo(function TestControls({
                   </TabsList>
                 </Tabs>
               ) : mode === "quote" ? (
-                <Tabs value={quoteLength} onValueChange={(v) => onQuoteLengthChange(v as QuoteLength)} className="flex items-center">
+                <Tabs value={quoteLength} onValueChange={(v: string) => onQuoteLengthChange(v as QuoteLength)} className="flex items-center">
                   <TabsList>
                     {(["short", "medium", "long"] as QuoteLength[]).map((q) => (
                       <TabsTrigger key={q} value={q} className="px-3 text-xs cursor-pointer">{q}</TabsTrigger>
@@ -713,13 +714,13 @@ export const TestControls = memo(function TestControls({
                      ) : (
                         <div className="flex items-center gap-3">
                            <div className="flex -space-x-2">
-                             {room?.players.map(p => (
+                             {room?.players.map((p: Player) => (
                                <div key={p.id} className={cn("h-7 w-7 rounded-full border-2 border-background bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold", p.isMe && "border-primary text-primary")} title={p.name}>
                                  {p.name[0]}
                                </div>
                              ))}
                            </div>
-                           {status === "waiting" && room?.players.find(p => p.isMe)?.isHost && (
+                           {status === "waiting" && room?.players.find((p: Player) => p.isMe)?.isHost && (
                               <button onClick={startRace} disabled={room.players.length < 2} className="px-3 h-7 rounded bg-primary text-[10px] font-bold text-primary-foreground disabled:opacity-50">START</button>
                            )}
                            <button onClick={leaveRoom} className="text-[10px] text-muted-foreground hover:text-destructive">LEAVE</button>
@@ -727,7 +728,7 @@ export const TestControls = memo(function TestControls({
                      )}
                   </div>
                 ) : (
-                <Tabs value={![15, 30, 60, 120].includes(timeOption) ? "custom" : String(timeOption)} onValueChange={(v) => { if (v !== "custom") onTimeOptionChange(Number(v)) }} className="flex items-center">
+                <Tabs value={![15, 30, 60, 120].includes(timeOption) ? "custom" : String(timeOption)} onValueChange={(v: string) => { if (v !== "custom") onTimeOptionChange(Number(v)) }} className="flex items-center">
                   <TabsList>
                     {[15, 30, 60, 120].map((t) => (
                       <TabsTrigger key={t} value={String(t)} className="px-3 text-xs cursor-pointer">{t}</TabsTrigger>
@@ -779,7 +780,7 @@ export const TestControls = memo(function TestControls({
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerContent
             className="max-h-[90dvh]"
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            onOpenAutoFocus={(e: Event) => e.preventDefault()}
           >
             <DrawerTitle className="sr-only">Test Settings</DrawerTitle>
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -815,7 +816,7 @@ export const TestControls = memo(function TestControls({
               "data-open:fade-in-0 data-open:zoom-in-95 data-open:slide-in-from-bottom-2",
               "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:slide-out-to-bottom-2",
             )}
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            onOpenAutoFocus={(e: Event) => e.preventDefault()}
           >
             <DialogTitle className="sr-only">Test Settings</DialogTitle>
             <div className="flex items-center justify-between border-b border-border px-4 py-3">

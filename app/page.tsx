@@ -25,7 +25,7 @@ export default function Page() {
     useMountEffect(() => {
         homeLogoHandlerRef.current = () => {
             setIsFinished(false)
-            setRestartKey((k) => k + 1)
+            setRestartKey((k: number) => k + 1)
         }
         return () => {
             homeLogoHandlerRef.current = null

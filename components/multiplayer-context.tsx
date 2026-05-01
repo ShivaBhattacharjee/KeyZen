@@ -44,7 +44,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
 
       // Simulate other players joining
       setTimeout(() => {
-        setRoom(prev => {
+        setRoom((prev: MultiplayerRoom | null) => {
           if (!prev) return null;
           const botCount = Math.floor(Math.random() * 3) + 1;
           const bots: Player[] = Array.from({ length: botCount }).map((_, i) => ({
@@ -67,30 +67,30 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   const startRace = useCallback(() => {
     if (!room) return;
     setStatus("starting");
-    setRoom(prev => prev ? { ...prev, countdown: 5 } : null);
+    setRoom((prev: MultiplayerRoom | null) => prev ? { ...prev, countdown: 5 } : null);
 
     let count = 5;
     countdownIntervalRef.current = setInterval(() => {
       count -= 1;
       if (count <= 0) {
-        clearInterval(countdownIntervalRef.current!);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         setStatus("racing");
-        setRoom(prev => prev ? { ...prev, status: "racing", startTime: Date.now(), countdown: 0 } : null);
+        setRoom((prev: MultiplayerRoom | null) => prev ? { ...prev, status: "racing", startTime: Date.now(), countdown: 0 } : null);
       } else {
-        setRoom(prev => prev ? { ...prev, countdown: count } : null);
+        setRoom((prev: MultiplayerRoom | null) => prev ? { ...prev, countdown: count } : null);
       }
     }, 1000);
   }, [room]);
 
   const updateProgress = useCallback((progress: number, wpm: number, accuracy: number) => {
-    setRoom(prev => {
+    setRoom((prev: MultiplayerRoom | null) => {
       if (!prev) return null;
-      const nextPlayers = prev.players.map(p => 
+      const nextPlayers = prev.players.map((p: Player) => 
         p.isMe ? { ...p, progress, wpm, accuracy } : p
       );
       
       // Check if I finished
-      const allDone = nextPlayers.every(p => p.progress >= 1);
+      const allDone = nextPlayers.every((p: Player) => p.progress >= 1);
       if (allDone && status !== "finished") {
         setStatus("finished");
       }
@@ -104,10 +104,10 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     if (status !== "racing" || !room) return;
 
     const botInterval = setInterval(() => {
-      setRoom(prev => {
+      setRoom((prev: MultiplayerRoom | null) => {
         if (!prev) return null;
         let anyChanges = false;
-        const nextPlayers = prev.players.map(p => {
+        const nextPlayers = prev.players.map((p: Player) => {
           if (p.isBot && p.progress < 1) {
             anyChanges = true;
             const newProgress = Math.min(1, p.progress + (Math.random() * 0.05));

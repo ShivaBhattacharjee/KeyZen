@@ -480,7 +480,7 @@ function KeyboardProvider({
         return;
       }
 
-      for (const stuckCode of Array.from(pressedKeysRef.current)) {
+      for (const stuckCode of Array.from(pressedKeysRef.current) as string[]) {
         if (!PHYSICAL_MODIFIER_CODES.has(stuckCode)) {
           releaseKey(stuckCode, "physical");
         }
@@ -789,7 +789,7 @@ function Key({
   const [isPointerDownVisual, setIsPointerDownVisual] = useState(false);
   const visuallyPressed = isPressed || isPointerDownVisual;
   const keyVariantSlot = resolveKeyVariant(themeName, keyCode);
-  const keyVariant = KEYBOARD_THEMES[themeName].variants[keyVariantSlot];
+  const keyVariant = KEYBOARD_THEMES[themeName as KeyboardThemeName].variants[keyVariantSlot];
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (!keyCode || event.button !== 0) {

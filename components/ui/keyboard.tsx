@@ -109,7 +109,9 @@ export function Keyboard({
       <div
         ref={containerRef}
         className={cn(
-          "inline-block [-webkit-text-size-adjust:100%] [text-size-adjust:100%] [zoom:0.4] xs:[zoom:0.5] sm:[zoom:0.65] md:[zoom:0.6] lg:[zoom:0.8] xl:[zoom:1.1]",
+          "inline-block [-webkit-text-size-adjust:100%] [text-size-adjust:100%]",
+          "origin-top scale-[0.55] xs:scale-[0.7] sm:scale-[0.8] md:scale-[0.9] lg:scale-100 xl:scale-110",
+          "transition-transform duration-300 ease-out",
           className,
         )}
       >

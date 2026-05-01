@@ -738,7 +738,9 @@ export const Keyboard = ({
             <div
                 ref={containerRef}
                 className={cn(
-                    "mx-auto w-fit [-webkit-text-size-adjust:100%] [text-size-adjust:100%] [zoom:0.45] xs:[zoom:0.55] sm:[zoom:0.8] md:[zoom:1] lg:[zoom:1.2] xl:[zoom:1.5] magic-keyboard-root",
+                    "mx-auto w-fit [-webkit-text-size-adjust:100%] [text-size-adjust:100%]",
+                    "origin-top scale-[0.6] xs:scale-[0.75] sm:scale-[0.8] md:scale-100 lg:scale-110 xl:scale-125 magic-keyboard-root",
+                    "transition-transform duration-300 ease-out",
                     className,
                 )}
             >

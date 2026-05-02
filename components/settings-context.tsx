@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { syncKeyZenFavicon } from "@/lib/favicon-client";
 import {
@@ -209,6 +209,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [showLineNumbers, setShowLineNumbersState] = useState(true);
   const [soundPackLoading, setSoundPackLoading] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   useMountEffect(() => {
     const savedAccent = localStorage.getItem("tc-accent") as AccentColor | null;
@@ -402,7 +411,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         font, setFont, fontCssFamily,
         fontSize, setFontSize,
         colorTheme, setColorTheme, themeLoading,
-        showKeyboard, setShowKeyboard,
+        showKeyboard: showKeyboard && !isMobile, setShowKeyboard,
         keyboardStyle, setKeyboardStyle,
         soundEnabled, setSoundEnabled,
         clickSoundEnabled, setClickSoundEnabled,

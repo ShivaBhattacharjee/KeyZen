@@ -115,10 +115,12 @@ export function TypingTest(props: TypingTestProps) {
 
   useEffect(() => {
     if (mode === "multiplayer" && status === "racing") {
-      const progress = words.length > 0 ? wordIndex / words.length : 0;
+      const currentWordLength = words[wordIndex]?.length || 1;
+      const partialProgress = Math.min(typed.length, currentWordLength) / currentWordLength;
+      const progress = words.length > 0 ? (wordIndex + partialProgress) / words.length : 0;
       updateProgress(progress, wpm, accuracy);
     }
-  }, [wordIndex, wpm, accuracy, mode, status, words.length, updateProgress]);
+  }, [wordIndex, typed.length, wpm, accuracy, mode, status, words, updateProgress]);
 
   const onModeChange = useCallback((next: string) => {
     onModeChangeInternal(next as TestMode)
@@ -244,7 +246,8 @@ export function TypingTest(props: TypingTestProps) {
       {/* Text area + controls — fills remaining height and centers when keyboard is hidden */}
       <div className={cn(
         "flex w-full flex-col items-center gap-3",
-        !showKeyboard && "flex-1 justify-center pb-20"
+        !showKeyboard && "flex-1 justify-center pb-20",
+        mode === "multiplayer" && "mt-32"
       )}>
 
       {/* Words display */}
@@ -276,7 +279,7 @@ export function TypingTest(props: TypingTestProps) {
         >
           {/* Multiplayer Progress Bars */}
           {mode === "multiplayer" && room && (
-            <div className="absolute top-0 left-0 right-0 -translate-y-full pb-8 flex flex-col gap-2">
+            <div className="absolute top-0 left-0 right-0 -translate-y-full pb-8 flex flex-col gap-2 z-50 pointer-events-none px-4">
               {room.players.map(p => (
                 <div key={p.id} className="flex items-center gap-3">
                   <div className="w-20 truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -375,6 +378,7 @@ export function TypingTest(props: TypingTestProps) {
             autoCorrect="off"
             autoCapitalize="none"
             spellCheck={false}
+            inputMode="none"
           />
 
           {rowOffset > 0 && (

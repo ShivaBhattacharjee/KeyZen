@@ -98,7 +98,7 @@ export default function Page() {
                 )}
             </AnimatePresence>
 
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-y-auto min-h-0">
                 <main
                     className={cn(
                         "flex flex-col px-6",
@@ -124,11 +124,11 @@ export default function Page() {
                         className={cn(
                             "flex items-center justify-center border-t border-border py-4 lg:py-0",
                             showKeyboard
-                                ? "flex-1 flex-col"
+                                ? "flex-col"
                                 : "invisible h-0 overflow-hidden border-0",
                         )}
                     >
-                        <div className="flex flex-col items-center justify-center w-full max-w-[100vw] overflow-hidden">
+                        <div className="flex flex-col items-center justify-center w-full max-w-full">
                             {keyboardStyle === "magic" ? (
                                 <MagicKeyboard
                                     enableHaptics

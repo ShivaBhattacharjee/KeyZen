@@ -110,7 +110,7 @@ export function Keyboard({
         ref={containerRef}
         className={cn(
           "inline-block [-webkit-text-size-adjust:100%] [text-size-adjust:100%]",
-          "origin-top scale-[0.55] xs:scale-[0.7] sm:scale-[0.8] md:scale-[0.9] lg:scale-100 xl:scale-110",
+          "origin-bottom scale-[0.55] xs:scale-[0.7] sm:scale-[0.8] md:scale-[0.9] lg:scale-100 [@media(max-height:850px)]:lg:scale-[0.85] [@media(max-height:750px)]:lg:scale-[0.75] [@media(max-height:650px)]:lg:scale-[0.65]",
           "transition-transform duration-300 ease-out",
           className,
         )}

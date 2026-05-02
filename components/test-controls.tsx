@@ -713,17 +713,25 @@ export const TestControls = memo(function TestControls({
                         </div>
                      ) : (
                         <div className="flex items-center gap-3">
-                           <div className="flex -space-x-2">
-                             {room?.players.map((p: Player) => (
-                               <div key={p.id} className={cn("h-7 w-7 rounded-full border-2 border-background bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold", p.isMe && "border-primary text-primary")} title={p.name}>
-                                 {p.name[0]}
+                            <div className="flex items-center gap-3">
+                               <div className="flex -space-x-2">
+                                 {room?.players.map((p: Player) => (
+                                   <div key={p.id} className={cn("h-7 w-7 rounded-full border-2 border-background bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold transition-all", p.isMe && "border-primary text-primary ring-2 ring-primary/20")} title={p.name}>
+                                     {p.name[0]}
+                                   </div>
+                                 ))}
                                </div>
-                             ))}
-                           </div>
-                           {status === "waiting" && room?.players.find((p: Player) => p.isMe)?.isHost && (
-                              <button onClick={startRace} disabled={room.players.length < 2} className="px-3 h-7 rounded bg-primary text-[10px] font-bold text-primary-foreground disabled:opacity-50">START</button>
-                           )}
-                           <button onClick={leaveRoom} className="text-[10px] text-muted-foreground hover:text-destructive">LEAVE</button>
+                               {status === "waiting" && room?.players.find((p: Player) => p.isMe)?.isHost && (
+                                  <button 
+                                    onClick={startRace} 
+                                    disabled={room.players.length < 2} 
+                                    className="px-4 h-7 rounded-lg bg-primary text-[10px] font-bold text-primary-foreground disabled:opacity-50 shadow-[0_0_10px_rgba(var(--primary),0.3)] hover:shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all active:scale-95"
+                                  >
+                                    START
+                                  </button>
+                               )}
+                               <button onClick={leaveRoom} className="text-[10px] font-semibold text-muted-foreground hover:text-destructive transition-colors">LEAVE</button>
+                            </div>
                         </div>
                      )}
                   </div>

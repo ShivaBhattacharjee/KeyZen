@@ -45,7 +45,19 @@ export type AccentColor =
   // Auto-synced from themes
   | "de-swiss-design" | "efferd" | "melancholik-mint" | "vermillion" | "autoblog" | "claude" | "offworld" | "shopify-red" | "t3chat"
   // Auto-synced from themes
+
   | "neon-nights";
+
+  | "openclaw"
+  // Auto-synced from themes
+  | "gruvbox"
+  // Auto-synced from themes
+  | "catppuccin"
+  // Auto-synced from themes
+  | "cyberpunk" | "supabase" | "twitter" | "vercel"
+  // Auto-synced from themes
+  | "soft-pop";
+
 
 export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[] = [
   { id: "teal",       label: "Teal",        swatch: "oklch(0.55 0.13 200)" },
@@ -78,7 +90,22 @@ export const ACCENT_COLORS: { id: AccentColor; label: string; swatch: string }[]
   { id: "shopify-red", label: "Shopify Red", swatch: "oklch(0.5778 0.2282 26.5713)" },
   { id: "t3chat", label: "T3chat", swatch: "oklch(0.5316 0.1409 355.1999)" },
   // Auto-synced from themes
+
   { id: "neon-nights", label: "Neon Nights", swatch: "oklch(0.6 0.3 330)" },
+
+  { id: "openclaw", label: "Openclaw", swatch: "oklch(0.6716 0.1368 48.5130)" },
+  // Auto-synced from themes
+  { id: "gruvbox", label: "Gruvbox", swatch: "oklch(0.5126 0.1616 39.2968)" },
+  // Auto-synced from themes
+  { id: "catppuccin", label: "Catppuccin", swatch: "oklch(0.5547 0.2503 297.0156)" },
+  // Auto-synced from themes
+  { id: "cyberpunk", label: "Cyberpunk", swatch: "oklch(0.6726 0.2904 341.4084)" },
+  { id: "supabase", label: "Supabase", swatch: "oklch(0.8348 0.1302 160.9080)" },
+  { id: "twitter", label: "Twitter", swatch: "oklch(0.6723 0.1606 244.9955)" },
+  { id: "vercel", label: "Vercel", swatch: "oklch(0 0 0)" },
+  // Auto-synced from themes
+  { id: "soft-pop", label: "Soft Pop", swatch: "oklch(0.5106 0.2301 276.9656)" },
+
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,7 +153,11 @@ export type TypingFont =
   | "permanent-marker" | "shadows-into-light" | "dancing-script" | "amatic-sc" | "sacramento"
   // Auto-synced from themes
   | "sf-mono"
-  | "geist";
+  | "geist"
+  // Auto-synced from themes
+  | "monospace"
+  | "open-sans"
+  | "menlo";
 
 export interface FontOption {
   id: TypingFont;
@@ -249,4 +280,8 @@ export const FONT_OPTIONS: FontOption[] = [
   // Auto-synced from themes
   { id: "sf-mono", label: "SF Mono", googleFamily: "SF+Mono:wght@400;500;700", cssFamily: "'SF Mono'", tag: "mono" },
   { id: "geist", label: "Geist", googleFamily: "Geist:wght@400;500;700", cssFamily: "'Geist'", tag: "display" },
+  // Auto-synced from themes
+  { id: "monospace", label: "monospace", googleFamily: "monospace:wght@400;500;700", cssFamily: "'monospace'", tag: "mono" },
+  { id: "open-sans", label: "Open Sans", googleFamily: "Open+Sans:wght@400;500;700", cssFamily: "'Open Sans'", tag: "display" },
+  { id: "menlo", label: "Menlo", googleFamily: "Menlo:wght@400;500;700", cssFamily: "'Menlo'", tag: "mono" },
 ];

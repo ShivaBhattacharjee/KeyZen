@@ -225,49 +225,49 @@ export const TestControls = memo(function TestControls({
               {mode === "words" ? "Word Count" : mode === "quote" ? "Quote Length" : mode === "custom" ? "Custom Text" : mode === "code" ? "Language / Chapter" : "Time (s)"}
             </span>
             {mode === "words" ? (
-                <div className="grid grid-cols-5 gap-2">
-                  {[10, 25, 50, 100].map((w) => (
+              <div className="grid grid-cols-5 gap-2">
+                {[10, 25, 50, 100].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => onWordOptionChange(w)}
+                    className={drawerBtnClass(wordOption === w)}
+                  >
+                    <span className="text-base font-semibold">{w}</span>
+                  </button>
+                ))}
+                <Popover open={wordPopoverOpen} onOpenChange={setWordPopoverOpen}>
+                  <PopoverTrigger asChild>
                     <button
-                      key={w}
                       type="button"
-                      onClick={() => onWordOptionChange(w)}
-                      className={drawerBtnClass(wordOption === w)}
+                      className={drawerBtnClass(![10, 25, 50, 100].includes(wordOption))}
                     >
-                      <span className="text-base font-semibold">{w}</span>
+                      <IconTool size={18} />
                     </button>
-                  ))}
-                  <Popover open={wordPopoverOpen} onOpenChange={setWordPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={drawerBtnClass(![10, 25, 50, 100].includes(wordOption))}
-                      >
-                        <IconTool size={18} />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-40 p-2" side="top" align="center">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Words</span>
-                        <input
-                          type="number"
-                          placeholder="e.g. 500"
-                          defaultValue={wordOption}
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === "Enter") {
-                              const val = parseInt(e.currentTarget.value);
-                              if (val > 0) {
-                                onWordOptionChange(val);
-                                setWordPopoverOpen(false);
-                              }
+                  </PopoverTrigger>
+                  <PopoverContent className="w-40 p-2" side="top" align="center">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custom Words</span>
+                      <input
+                        type="number"
+                        placeholder="e.g. 500"
+                        defaultValue={wordOption}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === "Enter") {
+                            const val = parseInt(e.currentTarget.value);
+                            if (val > 0) {
+                              onWordOptionChange(val);
+                              setWordPopoverOpen(false);
                             }
-                          }}
-                          className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                          }
+                        }}
+                        className="w-full rounded bg-muted px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             ) : mode === "quote" ? (
               <div className="grid grid-cols-3 gap-2">
                 {(["short", "medium", "long"] as QuoteLength[]).map((q) => (
@@ -406,30 +406,30 @@ export const TestControls = memo(function TestControls({
                 </div>
               </div>
             ) : (
-                <div className="grid grid-cols-5 gap-2">
-                  {[15, 30, 60, 120].map((t) => (
+              <div className="grid grid-cols-5 gap-2">
+                {[15, 30, 60, 120].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => onTimeOptionChange(t)}
+                    className={drawerBtnClass(timeOption === t)}
+                  >
+                    <span className="text-base font-semibold">{t}</span>
+                  </button>
+                ))}
+                <CustomTimeDialog
+                  timeOption={timeOption}
+                  onSave={onTimeOptionChange}
+                  trigger={
                     <button
-                      key={t}
                       type="button"
-                      onClick={() => onTimeOptionChange(t)}
-                      className={drawerBtnClass(timeOption === t)}
+                      className={drawerBtnClass(![15, 30, 60, 120].includes(timeOption))}
                     >
-                      <span className="text-base font-semibold">{t}</span>
+                      <IconTool size={18} />
                     </button>
-                  ))}
-                  <CustomTimeDialog
-                    timeOption={timeOption}
-                    onSave={onTimeOptionChange}
-                    trigger={
-                      <button
-                        type="button"
-                        className={drawerBtnClass(![15, 30, 60, 120].includes(timeOption))}
-                      >
-                        <IconTool size={18} />
-                      </button>
-                    }
-                  />
-                </div>
+                  }
+                />
+              </div>
             )}
 
             {mode === "multiplayer" && (
@@ -559,7 +559,7 @@ export const TestControls = memo(function TestControls({
         )}
       >
         {/* Desktop / large screen controls */}
-        <div className="hidden lg:flex items-center justify-center gap-2 mt-6 whitespace-nowrap">
+        <div className="hidden lg:flex items-center justify-center gap-2 mt-6 whitespace-nowrap scale-94 origin-top">
           {/* Toggles: punctuation / numbers / difficulty — disabled in quote / code / custom mode */}
           {(() => {
             const disabled = mode === "quote" || mode === "code" || mode === "custom";

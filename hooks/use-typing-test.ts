@@ -973,6 +973,12 @@ const onCodeLanguageChange = useCallback((next: string) => {
     onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
     onPunctuationToggle, onNumbersToggle, onDifficultyToggle,
     onCustomTextChange, onCodeLanguageChange, onCodeChapterChange,
-    onRestart: () => resetTest(),
+    onRestart: () => {
+      if (mode !== "code") return resetTest();
+      const others = (CODE_MANIFEST[codeLanguage]?.chapters ?? []).filter(c => c !== codeChapter);
+      const pick = others[Math.floor(Math.random() * others.length)];
+      if (pick) { setCodeChapter(pick); localStorage.setItem(CODE_CHAPTER_STORAGE_KEY, pick); }
+      resetTest(pick ? { codeChapter: pick } : {});
+    },
   };
 }

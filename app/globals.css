@@ -451,6 +451,7 @@
 }
 
 
+
 /* neon-nights */
 :root[data-accent="neon-nights"] {
   --primary: oklch(0.6 0.3 330);
@@ -460,6 +461,98 @@
 :root.dark[data-accent="neon-nights"] {
   --primary: oklch(0.7 0.3 190);
   --ring: oklch(0.7 0.3 190);
+
+/* openclaw */
+:root[data-accent="openclaw"] {
+  --primary: oklch(0.6716 0.1368 48.5130);
+  --ring: oklch(0.6716 0.1368 48.5130);
+}
+
+:root.dark[data-accent="openclaw"] {
+  --primary: oklch(0.6622 0.1421 255.9325);
+  --ring: oklch(0.7214 0.1337 49.9802);
+}
+
+
+/* gruvbox */
+:root[data-accent="gruvbox"] {
+  --primary: oklch(0.5126 0.1616 39.2968);
+  --ring: oklch(0.5126 0.1616 39.2968);
+}
+
+:root.dark[data-accent="gruvbox"] {
+  --primary: oklch(0.7311 0.1820 51.6932);
+  --ring: oklch(0.7311 0.1820 51.6932);
+}
+
+
+/* catppuccin */
+:root[data-accent="catppuccin"] {
+  --primary: oklch(0.5547 0.2503 297.0156);
+  --ring: oklch(0.5547 0.2503 297.0156);
+}
+
+:root.dark[data-accent="catppuccin"] {
+  --primary: oklch(0.7871 0.1187 304.7693);
+  --ring: oklch(0.7871 0.1187 304.7693);
+}
+
+
+/* cyberpunk */
+:root[data-accent="cyberpunk"] {
+  --primary: oklch(0.6726 0.2904 341.4084);
+  --ring: oklch(0.6726 0.2904 341.4084);
+}
+
+:root.dark[data-accent="cyberpunk"] {
+  --primary: oklch(0.6726 0.2904 341.4084);
+  --ring: oklch(0.6726 0.2904 341.4084);
+}
+
+/* supabase */
+:root[data-accent="supabase"] {
+  --primary: oklch(0.8348 0.1302 160.9080);
+  --ring: oklch(0.8348 0.1302 160.9080);
+}
+
+:root.dark[data-accent="supabase"] {
+  --primary: oklch(0.4365 0.1044 156.7556);
+  --ring: oklch(0.8003 0.1821 151.7110);
+}
+
+/* twitter */
+:root[data-accent="twitter"] {
+  --primary: oklch(0.6723 0.1606 244.9955);
+  --ring: oklch(0.6818 0.1584 243.3540);
+}
+
+:root.dark[data-accent="twitter"] {
+  --primary: oklch(0.6692 0.1607 245.0110);
+  --ring: oklch(0.6818 0.1584 243.3540);
+}
+
+/* vercel */
+:root[data-accent="vercel"] {
+  --primary: oklch(0 0 0);
+  --ring: oklch(0 0 0);
+}
+
+:root.dark[data-accent="vercel"] {
+  --primary: oklch(1 0 0);
+  --ring: oklch(0.7200 0 0);
+}
+
+
+/* soft-pop */
+:root[data-accent="soft-pop"] {
+  --primary: oklch(0.5106 0.2301 276.9656);
+  --ring: oklch(0.7853 0.1041 274.7134);
+}
+
+:root.dark[data-accent="soft-pop"] {
+  --primary: oklch(0.6801 0.1583 276.9349);
+  --ring: oklch(0.6801 0.1583 276.9349);
+
 }
 
 /* Auto-synced theme accents end */

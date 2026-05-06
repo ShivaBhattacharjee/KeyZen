@@ -75,6 +75,16 @@ export default async function AboutPage() {
           stack and features.
         </p>
         <p className="leading-relaxed">
+          Want the full tour? Visit the{" "}
+          <Link
+            href="/landing"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            landing page
+          </Link>
+          .
+        </p>
+        <p className="leading-relaxed">
           If you spot a bug or want to improve something,{" "}
           <a
             href={`https://github.com/${REPO_OWNER}/${REPO_NAME}/issues`}
@@ -86,6 +96,27 @@ export default async function AboutPage() {
           </a>{" "}
           on GitHub.
         </p>
+
+        <h2 className="font-(family-name:--font-doto) text-xl font-semibold text-foreground">
+          Keyboard Shortcuts
+        </h2>
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-foreground mb-2">Typing Test</h3>
+            <ul className="list-inside list-disc space-y-1 text-sm">
+              <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">tab</kbd> + <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">enter</kbd> - Restart test</li>
+              <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">shift</kbd> + <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">enter</kbd> - End test (Zen mode)</li>
+              <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">ctrl</kbd> / <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">alt</kbd> + <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">backspace</kbd> - Delete current word</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-2">Results Screen</h3>
+            <ul className="list-inside list-disc space-y-1 text-sm">
+              <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">enter</kbd> - Next test</li>
+              <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">ctrl</kbd> / <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">cmd</kbd> + <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">enter</kbd> - Restart test</li>
+            </ul>
+          </div>
+        </div>
 
         <h2 className="font-(family-name:--font-doto) text-xl font-semibold text-foreground">
           Privacy & Data Collection

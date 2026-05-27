@@ -117,6 +117,9 @@ export function useTypingTest({
   const errorsThisSecondRef = useRef(0);
   const elapsedSecondsRef = useRef(0);
   const correctedErrorsRef = useRef(0);
+  const wordTimingsMsRef = useRef<number[]>([]);
+  const wordStartTimeRef = useRef<number | null>(null);
+  const practiceWordsRef = useRef<string[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wordsContainerRef = useRef<HTMLDivElement>(null);
   const activeWordRef = useRef<HTMLDivElement>(null);
@@ -185,6 +188,9 @@ export function useTypingTest({
       modeDetail: mode === "time" ? String(timeOption) : mode === "words" ? String(wordOption) : mode === "quote" ? quoteLength : mode === "custom" ? "custom" : "",
       language,
       wpmHistory,
+      wordInputs: snapshotWordInputs,
+      targetWords: words,
+      wordTimingsMs: wordTimingsMsRef.current.slice(),
     };
   }, [wordInputs, typed, wordIndex, startTime, words, mode, timeOption, wordOption, quoteLength, language, wpmHistory]);
 
@@ -287,8 +293,13 @@ export function useTypingTest({
         setCodeIndents([0]);
       }
     } else {
-      const newWords = await buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics: sd });
-      setWords(newWords);
+      // Use practice word set if active (practice mode overrides normal word generation)
+      if (practiceWordsRef.current) {
+        setWords(practiceWordsRef.current);
+      } else {
+        const newWords = await buildWords(lang, wc, { punctuation: p, numbers: n, difficulty: d, showDiacritics: sd });
+        setWords(newWords);
+      }
       setCodeLines([]);
       setCodeIndents([]);
     }
@@ -304,6 +315,8 @@ export function useTypingTest({
     errorsThisSecondRef.current = 0;
     elapsedSecondsRef.current = 0;
     correctedErrorsRef.current = 0;
+    wordTimingsMsRef.current = [];
+    wordStartTimeRef.current = null;
     if (m === "time") setTimeLeft(to);
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setRowOffset(0);
@@ -604,8 +617,10 @@ export function useTypingTest({
       if (e.key === "Backspace" && !started && typed.length === 0) return;
 
       if (!started) {
+        const now = Date.now();
         setStarted(true);
-        setStartTime(Date.now());
+        setStartTime(now);
+        wordStartTimeRef.current = now;
         setShowControls(false);
         onTypingActiveChange?.(true);
 
@@ -652,6 +667,13 @@ export function useTypingTest({
         const nextInputs = [...wordInputs, typed];
         const nextIndex = wordIndex + 1;
         recordWordSnapshot(nextInputs, "", nextIndex);
+
+        // record per-word timing
+        const now = Date.now();
+        if (wordStartTimeRef.current !== null) {
+          wordTimingsMsRef.current.push(now - wordStartTimeRef.current);
+        }
+        wordStartTimeRef.current = now;
 
         if (wordIndex + 1 >= words.length) {
           setWordInputs(nextInputs);
@@ -736,6 +758,11 @@ export function useTypingTest({
           }
           if (nextTyped.length > currentWord.length) errorsThisSecondRef.current++;
           const nextInputs = [...wordInputs, nextTyped];
+          // record timing for last word
+          if (wordStartTimeRef.current !== null) {
+            wordTimingsMsRef.current.push(Date.now() - wordStartTimeRef.current);
+            wordStartTimeRef.current = null;
+          }
           setWordInputs(nextInputs);
           recordWordSnapshot(nextInputs, "", wordIndex + 1);
           finishTest(buildResultStats(nextInputs, "", wordIndex + 1));
@@ -843,6 +870,8 @@ export function useTypingTest({
     errorsThisSecondRef.current = 0;
     elapsedSecondsRef.current = 0;
     correctedErrorsRef.current = 0;
+    wordTimingsMsRef.current = [];
+    wordStartTimeRef.current = null;
     if (mode === "time") setTimeLeft(timeOption);
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setRowOffset(0);
@@ -891,8 +920,25 @@ export function useTypingTest({
     }, 150);
   }, [resetTestImmediate, resetTestWith, mode, codeLanguage, codeChapter]);
 
+  const handleResultsPractice = useCallback((words: string[]) => {
+    setScreenFade(0);
+    if (screenFadeRef.current) clearTimeout(screenFadeRef.current);
+    screenFadeRef.current = setTimeout(() => {
+      // Store practice set — restarts will re-use this instead of generating new words
+      practiceWordsRef.current = words;
+      // Use words mode (doesn't touch custom text at all)
+      setMode("words");
+      localStorage.setItem(TEST_MODE_STORAGE_KEY, "words");
+      void resetTestWith({ mode: "words" }).then(() => {
+        requestAnimationFrame(() => setScreenFade(1));
+        screenFadeRef.current = null;
+      });
+    }, 150);
+  }, [resetTestWith]);
+
 
   const onModeChange = useCallback((next: TestMode) => {
+    practiceWordsRef.current = null; // exit practice mode when user picks a mode manually
     setMode(next);
     localStorage.setItem(TEST_MODE_STORAGE_KEY, next);
     if (next === "code" && !codeLanguage) {
@@ -913,6 +959,7 @@ export function useTypingTest({
   }, [resetTest]);
 
   const onWordOptionChange = useCallback((next: WordOption) => {
+    practiceWordsRef.current = null; // changing word count exits practice mode
     setWordOption(next);
     localStorage.setItem(WORD_OPTION_STORAGE_KEY, String(next));
     resetTest({ wordOption: next });
@@ -994,7 +1041,7 @@ const onCodeLanguageChange = useCallback((next: string) => {
 
     handleKeyDown, handleFocus, handleInputBlur, handleInputFocus,
     handleCompositionStart, handleCompositionEnd,
-    handleMouseMove, handleResultsRestart, handleResultsNext,
+    handleMouseMove, handleResultsRestart, handleResultsNext, handleResultsPractice,
     onModeChange, onTimeOptionChange, onWordOptionChange, onQuoteLengthChange,
     onPunctuationToggle, onNumbersToggle, onDifficultyToggle,
     onCustomTextChange, onCodeLanguageChange, onCodeChapterChange,

@@ -96,6 +96,7 @@ export function TypingTest(props: TypingTestProps) {
     handleMouseMove,
     handleResultsRestart,
     handleResultsNext,
+    handleResultsPractice,
     onModeChange: onModeChangeInternal,
     onTimeOptionChange,
     onWordOptionChange,
@@ -185,6 +186,7 @@ export function TypingTest(props: TypingTestProps) {
           stats={frozenStats!}
           onRestart={handleResultsRestart}
           onNext={handleResultsNext}
+          onPractice={handleResultsPractice}
         />
       </div>
     )

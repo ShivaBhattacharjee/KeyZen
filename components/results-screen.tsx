@@ -5,8 +5,8 @@ import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
 import { isInvalidTestResult } from "@/lib/validate-result";
 import { saveIfPersonalBest } from "@/lib/personal-best";
 import { getLanguageManifest } from "@/lib/languages";
-import { motion } from "motion/react";
-import { IconInfoCircle, IconRefresh, IconArrowRight, IconDownload } from "@tabler/icons-react";
+import { motion, AnimatePresence } from "motion/react";
+import { IconInfoCircle, IconRefresh, IconArrowRight, IconDownload, IconAlignLeft, IconTargetArrow } from "@tabler/icons-react";
 import {
   LineChart,
   Line,
@@ -24,6 +24,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { CornerBrackets } from "@/components/corner-brackets";
 import { ScreenshotButton } from "@/components/shareable-result-card";
 
@@ -49,12 +56,16 @@ export interface ResultStats {
   modeDetail: string;
   language: string;
   wpmHistory: WpmSnapshot[];
+  wordInputs?: string[];
+  targetWords?: string[];
+  wordTimingsMs?: number[];
 }
 
 interface ResultsScreenProps {
   stats: ResultStats;
   onRestart: () => void;
   onNext: () => void;
+  onPractice?: (words: string[]) => void;
 }
 
 function ResultsBracketButton({
@@ -221,7 +232,7 @@ function WpmChart({
 }
 
 
-export function ResultsScreen({ stats, onRestart, onNext }: ResultsScreenProps) {
+export function ResultsScreen({ stats, onRestart, onNext, onPractice }: ResultsScreenProps) {
   const {
     wpm,
     accuracy,
@@ -405,9 +416,437 @@ export function ResultsScreen({ stats, onRestart, onNext }: ResultsScreenProps) 
           icon={<IconRefresh size={16} aria-hidden />}
         />
         <ScreenshotButton stats={stats} pb={pb} />
+        <WordReviewModal stats={stats} />
+        {onPractice && stats.accuracy < 100 && <PracticeWordsModal stats={stats} onPractice={onPractice} />}
         <DownloadResultsPopover stats={stats} pb={pb} />
       </div>
     </motion.div>
+  );
+}
+
+// ─── Practice Words ──────────────────────────────────────────────────────────
+
+type MissedMode = "off" | "words" | "biwords";
+
+function buildPracticeWords(
+  targetWords: string[],
+  wordInputs: string[],
+  wordTimingsMs: number[],
+  missedMode: MissedMode,
+  includeSlow: boolean,
+): string[] {
+  const result = new Set<string>();
+
+  // Missed words
+  if (missedMode !== "off") {
+    targetWords.forEach((target, i) => {
+      const typed = wordInputs[i];
+      if (typed === undefined) return; // not reached
+      if (typed !== target) {
+        if (missedMode === "biwords" && i > 0) {
+          result.add(`${targetWords[i - 1]} ${target}`);
+        } else {
+          result.add(target);
+        }
+      }
+    });
+  }
+
+  // Slow words — above 75th‑percentile timing
+  if (includeSlow && wordTimingsMs.length > 1) {
+    const sorted = [...wordTimingsMs].sort((a, b) => a - b);
+    const p75 = sorted[Math.floor(sorted.length * 0.75)];
+    wordTimingsMs.forEach((ms, i) => {
+      if (ms > p75 && targetWords[i]) {
+        result.add(targetWords[i]);
+      }
+    });
+  }
+
+  return Array.from(result);
+}
+
+function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`rounded-md px-3 py-1.5 text-xs font-mono transition-colors focus-visible:outline-none ${
+            value === opt.value
+              ? "bg-primary text-primary-foreground"
+              : "border border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PracticeWordsModal({
+  stats,
+  onPractice,
+}: {
+  stats: ResultStats;
+  onPractice: (words: string[]) => void;
+}) {
+  const { wordInputs = [], targetWords = [], wordTimingsMs = [] } = stats;
+  const [missedMode, setMissedMode] = useState<MissedMode>("words");
+  const [includeSlow, setIncludeSlow] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const hasMissed = targetWords.some((w, i) => {
+    const t = wordInputs[i];
+    return t !== undefined && t !== w;
+  });
+  const hasSlow = wordTimingsMs.length > 3;
+
+  const practiceWords = useMemo(
+    () => buildPracticeWords(targetWords, wordInputs, wordTimingsMs, missedMode, includeSlow),
+    [targetWords, wordInputs, wordTimingsMs, missedMode, includeSlow],
+  );
+
+  const canStart = practiceWords.length > 0;
+
+  function handleStart() {
+    if (!canStart) return;
+    // Repeat the set a few times so there's enough text for a real session
+    const repeated = Array.from({ length: Math.max(1, Math.ceil(20 / practiceWords.length)) })
+      .flatMap(() => [...practiceWords])
+      .slice(0, Math.max(practiceWords.length * 3, 20));
+    setOpen(false);
+    onPractice(repeated);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <CornerBrackets className="inline-flex">
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
+          >
+            <IconTargetArrow size={16} stroke={1.5} aria-hidden />
+            Practice Words
+          </button>
+        </CornerBrackets>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Practice Words</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-5 py-1">
+
+          {/* Missed section */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-primary">✕ missed</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Include missed words or biwords (which include the previous word).
+            </p>
+            <SegmentedControl<MissedMode>
+              options={[
+                { value: "off", label: "off" },
+                { value: "words", label: "words" },
+                { value: "biwords", label: "biwords" },
+              ]}
+              value={missedMode}
+              onChange={setMissedMode}
+            />
+            {!hasMissed && missedMode !== "off" && (
+              <p className="text-[10px] text-muted-foreground/50 italic">
+                No missed words in this test.
+              </p>
+            )}
+          </div>
+
+          {/* Slow section */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-primary">◎ slow</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Include words you typed slower than others (top 25% slowest).
+            </p>
+            <SegmentedControl<"off" | "on">
+              options={[
+                { value: "off", label: "off" },
+                { value: "on", label: "on" },
+              ]}
+              value={includeSlow ? "on" : "off"}
+              onChange={(v) => setIncludeSlow(v === "on")}
+            />
+            {!hasSlow && includeSlow && (
+              <p className="text-[10px] text-muted-foreground/50 italic">
+                Not enough timing data for this test.
+              </p>
+            )}
+          </div>
+
+          {/* Preview */}
+          {canStart && (
+            <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2">
+              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                {practiceWords.length} word{practiceWords.length !== 1 ? "s" : ""} selected
+              </p>
+              <p className="font-mono text-xs text-muted-foreground line-clamp-2">
+                {practiceWords.join(" · ")}
+              </p>
+            </div>
+          )}
+
+          {/* Start button */}
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={!canStart}
+            className="w-full rounded-md border border-border px-4 py-2.5 font-mono text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none"
+          >
+            start
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Word Review ──────────────────────────────────────────────────────────────
+
+function WordChip({ target, typed }: { target: string; typed: string }) {
+  const isFullMatch = typed === target;
+  return (
+    <div
+      className={`rounded-md border px-2 py-1 font-mono text-xs ${
+        isFullMatch
+          ? "border-primary/20 bg-primary/5"
+          : "border-destructive/20 bg-destructive/5"
+      }`}
+    >
+      <div className="flex">
+        {target.split("").map((ch, ci) => {
+          const typedCh = typed[ci];
+          if (typedCh === undefined) {
+            return (
+              <span key={ci} className="text-muted-foreground/30 underline decoration-dotted">
+                {ch}
+              </span>
+            );
+          }
+          if (typedCh === ch) {
+            return <span key={ci} className="text-primary">{ch}</span>;
+          }
+          return <span key={ci} className="text-destructive">{typedCh}</span>;
+        })}
+        {typed.length > target.length &&
+          typed.slice(target.length).split("").map((ch, ci) => (
+            <span key={`extra-${ci}`} className="text-destructive opacity-60">{ch}</span>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function downloadWordReviewCsv(
+  targetWords: string[],
+  wordInputs: string[],
+  wordTimingsMs: number[],
+) {
+  const headers = ["#", "target", "typed", "correct", "char_accuracy_%", "time_ms"];
+  const rows = targetWords.map((target, i) => {
+    const typed = wordInputs[i] ?? "";
+    const reached = wordInputs[i] !== undefined;
+    if (!reached) return [i + 1, target, "", "not_reached", "", ""].join(",");
+
+    const correct = typed === target;
+
+    // character-level accuracy: count matching chars / max(target, typed) length
+    const maxLen = Math.max(target.length, typed.length);
+    const matchedChars = target.split("").filter((ch, ci) => typed[ci] === ch).length;
+    const charAccuracy = maxLen > 0 ? Math.round((matchedChars / maxLen) * 100) : 100;
+
+    const timeMs = wordTimingsMs[i] !== undefined ? wordTimingsMs[i] : "";
+
+    return [
+      i + 1,
+      `"${target}"`,
+      `"${typed}"`,
+      correct ? "correct" : "wrong",
+      charAccuracy,
+      timeMs,
+    ].join(",");
+  });
+
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `word-review-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function WordReviewModal({ stats }: { stats: ResultStats }) {
+  const { wordInputs = [], targetWords = [], wordTimingsMs = [] } = stats;
+  const [showUnreached, setShowUnreached] = useState(false);
+
+  if (targetWords.length === 0) return null;
+
+  const reachedWords = targetWords.filter((_, i) => wordInputs[i] !== undefined);
+  const unreachedWords = targetWords.filter((_, i) => wordInputs[i] === undefined);
+  const correctWordCount = reachedWords.filter((w, i) => wordInputs[i] === w).length;
+  const totalTyped = reachedWords.length;
+
+  return (
+    <Dialog onOpenChange={() => setShowUnreached(false)}>
+      <DialogTrigger asChild>
+        <CornerBrackets className="inline-flex">
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
+          >
+            <IconAlignLeft size={16} stroke={1.5} aria-hidden />
+            Word Review
+          </button>
+        </CornerBrackets>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <span>Word Review</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {correctWordCount}/{totalTyped} correct
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Summary row */}
+        <div className="flex items-center gap-2 border-b border-border pb-3 text-xs text-muted-foreground shrink-0">
+          <span>
+            <span className="text-primary font-semibold">{correctWordCount}</span> correct
+          </span>
+          <span>
+            <span className="text-destructive font-semibold">{totalTyped - correctWordCount}</span> wrong
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadWordReviewCsv(targetWords, wordInputs, wordTimingsMs)}
+              className="flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 text-[10px] text-muted-foreground/60 transition-colors hover:border-border hover:text-muted-foreground focus-visible:outline-none"
+              title="Download word review as CSV"
+            >
+              <IconDownload size={11} stroke={1.5} aria-hidden />
+              Download
+            </button>
+            {unreachedWords.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowUnreached((v) => !v)}
+                className="flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1 text-[10px] text-muted-foreground/60 transition-colors hover:border-border hover:text-muted-foreground"
+              >
+                <span>{unreachedWords.length} not reached</span>
+                <motion.span
+                  animate={{ rotate: showUnreached ? 180 : 0 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ display: "inline-block", lineHeight: 1 }}
+                >
+                  ▾
+                </motion.span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Word grid */}
+        <div className="overflow-y-auto flex-1 pr-1">
+          {/* Reached words */}
+          <div className="flex flex-wrap gap-2 py-1">
+            {targetWords
+              .filter((_, i) => wordInputs[i] !== undefined)
+              .map((target, idx) => {
+                let origIdx = 0;
+                let reached = 0;
+                for (let i = 0; i < targetWords.length; i++) {
+                  if (wordInputs[i] !== undefined) {
+                    if (reached === idx) { origIdx = i; break; }
+                    reached++;
+                  }
+                }
+                return <WordChip key={origIdx} target={target} typed={wordInputs[origIdx]!} />;
+              })}
+          </div>
+
+          {/* Unreached words — animated collapse */}
+          <AnimatePresence initial={false}>
+            {showUnreached && unreachedWords.length > 0 && (
+              <motion.div
+                key="unreached"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                style={{ overflow: "hidden" }}
+              >
+                <motion.div
+                  initial={{ y: -8 }}
+                  animate={{ y: 0 }}
+                  exit={{ y: -8 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  className="mt-3 border-t border-border/40 pt-3"
+                >
+                  <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground/40">
+                    Not reached
+                  </p>
+                  <div className="flex flex-wrap gap-2 pb-1">
+                    {unreachedWords.map((target, i) => (
+                      <motion.div
+                        key={`u-${i}`}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.15, delay: i * 0.008, ease: "easeOut" }}
+                        className="rounded-md border border-border/30 px-2 py-1 font-mono text-xs text-muted-foreground/30"
+                      >
+                        {target}
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Legend */}
+        <div className="flex gap-4 border-t border-border pt-3 text-[10px] text-muted-foreground shrink-0">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-[2px] bg-primary/60" />
+            correct
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-[2px] bg-destructive/60" />
+            wrong / extra
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-[2px] bg-muted-foreground/20" />
+            missed chars
+          </span>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

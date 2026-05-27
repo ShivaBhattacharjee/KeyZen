@@ -14,11 +14,12 @@ import { useMountEffect } from "@/hooks/use-mount-effect"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "motion/react"
-import { IconInfoCircle, IconNotes, IconSettings } from "@tabler/icons-react"
+import { IconInfoCircle, IconNotes, IconSettings, IconTargetArrow } from "@tabler/icons-react"
 import { GithubLogo } from "@phosphor-icons/react"
 
 import { CornerBrackets } from "@/components/corner-brackets"
 import { DynamicFavicon } from "@/components/dynamic-favicon"
+import { PracticeDashboard } from "@/components/practice-dashboard"
 import { SettingsPanel } from "@/components/settings-panel"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,7 @@ interface AppChromeContextValue {
   typingActive: boolean
   setTypingActive: (active: boolean) => void
   homeLogoHandlerRef: React.MutableRefObject<(() => void) | null>
+  startPracticeRef: React.MutableRefObject<((words: string[]) => void) | null>
 }
 
 const AppChromeContext = createContext<AppChromeContextValue | null>(null)
@@ -52,6 +54,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const [keyboardInset, setKeyboardInset] = useState(0)
   const [isMobile, setIsMobile] = useState(true)
   const homeLogoHandlerRef = useRef<(() => void) | null>(null)
+  const startPracticeRef = useRef<((words: string[]) => void) | null>(null)
   useClickSound()
 
   useEffect(() => {
@@ -118,6 +121,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
       typingActive,
       setTypingActive,
       homeLogoHandlerRef,
+      startPracticeRef,
     }),
     [settingsOpen, testSettingsOpen, typingActive],
   )
@@ -153,8 +157,9 @@ export function AppChrome({ children }: { children: ReactNode }) {
 function SiteHeader() {
   const pathname = usePathname()
   const router = useRouter()
-  const { setSettingsOpen, typingActive, homeLogoHandlerRef } =
+  const { setSettingsOpen, typingActive, homeLogoHandlerRef, startPracticeRef } =
     useAppChrome()
+  const [dashboardOpen, setDashboardOpen] = useState(false)
 
   const isHome = pathname === "/"
   const dimHeader = isHome && typingActive
@@ -192,6 +197,7 @@ function SiteHeader() {
     "rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 
   return (
+    <>
     <motion.header
       animate={{ opacity: dimHeader ? (headerVisible ? 1 : 0.1) : 1 }}
       transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -241,6 +247,16 @@ function SiteHeader() {
             >
               <IconNotes size={16} stroke={1.5} aria-hidden />
             </Link>
+            {isHome && (
+              <button
+                type="button"
+                onClick={() => setDashboardOpen(true)}
+                className={cn(iconButtonClass, "cursor-pointer")}
+                aria-label="Practice dashboard"
+              >
+                <IconTargetArrow size={16} stroke={1.5} aria-hidden />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -266,5 +282,13 @@ function SiteHeader() {
         </CornerBrackets>
       </div>
     </motion.header>
+    {isHome && (
+      <PracticeDashboard
+        open={dashboardOpen}
+        onOpenChange={setDashboardOpen}
+        onStartPractice={(words) => startPracticeRef.current?.(words)}
+      />
+    )}
+    </>
   )
 }

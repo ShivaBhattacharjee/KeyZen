@@ -8,6 +8,7 @@ import { TestControls, type CodeManifest } from "@/components/test-controls"
 import { WordItem } from "@/components/word-item"
 import { useTypingTest } from "@/hooks/use-typing-test"
 import { useSettings } from "@/components/settings-context"
+import { useAppChrome } from "@/components/app-chrome"
 import { cn } from "@/lib/utils"
 import { useShikiTokens } from "@/hooks/use-shiki";
 import { CODE_MANIFEST, getCodeContent } from "@/lib/code";
@@ -114,6 +115,13 @@ export function TypingTest(props: TypingTestProps) {
     onModeChangeInternal(next as Parameters<typeof onModeChangeInternal>[0])
     props.onModeChange?.(next)
   }, [onModeChangeInternal, props])
+
+  // Expose practice-start to the header dashboard via the shared chrome ref.
+  const { startPracticeRef } = useAppChrome()
+  useEffect(() => {
+    startPracticeRef.current = handleResultsPractice
+    return () => { startPracticeRef.current = null }
+  }, [handleResultsPractice, startPracticeRef])
 
   const isCodeRendering = (mode === "code" || (mode === "custom" && codeLines.length > 0))
 

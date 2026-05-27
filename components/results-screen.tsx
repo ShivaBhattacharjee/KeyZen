@@ -4,7 +4,7 @@ import { useMemo, useEffect, useRef, useState, type ReactNode } from "react";
 import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
 import { isInvalidTestResult } from "@/lib/validate-result";
 import { saveIfPersonalBest } from "@/lib/personal-best";
-import { getLanguageManifest } from "@/lib/languages";
+import { recordTestMistakes, getProblemWords, getMistakeStats, buildHistoryPracticeWords, clearMistakes } from "@/lib/mistakes";
 import { motion, AnimatePresence } from "motion/react";
 import { IconInfoCircle, IconRefresh, IconArrowRight, IconDownload, IconAlignLeft, IconTargetArrow } from "@tabler/icons-react";
 import {
@@ -253,6 +253,14 @@ export function ResultsScreen({ stats, onRestart, onNext, onPractice }: ResultsS
   const invalid = isInvalidTestResult(stats)
 
   const [pb] = useState(() => invalid ? null : saveIfPersonalBest(mode, modeDetail, wpm, accuracy));
+
+  // Record this test's missed/slow words into the persistent dictionary — once per mount.
+  const recordedRef = useRef(false);
+  useEffect(() => {
+    if (invalid || recordedRef.current) return;
+    recordedRef.current = true;
+    recordTestMistakes(stats.targetWords ?? [], stats.wordInputs ?? [], stats.wordTimingsMs ?? [], stats.mode);
+  }, [invalid, stats.targetWords, stats.wordInputs, stats.wordTimingsMs, stats.mode]);
   const chartPersonalBest = wpm;
 
   const languageName = useMemo(() => {
@@ -417,7 +425,7 @@ export function ResultsScreen({ stats, onRestart, onNext, onPractice }: ResultsS
         />
         <ScreenshotButton stats={stats} pb={pb} />
         <WordReviewModal stats={stats} />
-        {onPractice && stats.accuracy < 100 && <PracticeWordsModal stats={stats} onPractice={onPractice} />}
+        {onPractice && <PracticeWordsModal stats={stats} onPractice={onPractice} />}
         <DownloadResultsPopover stats={stats} pb={pb} />
       </div>
     </motion.div>
@@ -506,6 +514,7 @@ function PracticeWordsModal({
   const [missedMode, setMissedMode] = useState<MissedMode>("words");
   const [includeSlow, setIncludeSlow] = useState(false);
   const [open, setOpen] = useState(false);
+  const [dictVersion, setDictVersion] = useState(0);
 
   const hasMissed = targetWords.some((w, i) => {
     const t = wordInputs[i];
@@ -513,21 +522,44 @@ function PracticeWordsModal({
   });
   const hasSlow = wordTimingsMs.length > 3;
 
-  const practiceWords = useMemo(
+  // Read the all-time dictionary fresh whenever the modal opens or is reset.
+  const allTime = useMemo(() => {
+    if (!open) return { words: [] as string[], count: 0, mastery: 100 };
+    const words = getProblemWords().map((e) => e.word);
+    const { count, mastery } = getMistakeStats();
+    return { words, count, mastery };
+  }, [open, dictVersion]);
+
+  const hasHistory = allTime.count > 0;
+  const [source, setSource] = useState<"test" | "all-time">("all-time");
+
+  const testWords = useMemo(
     () => buildPracticeWords(targetWords, wordInputs, wordTimingsMs, missedMode, includeSlow),
     [targetWords, wordInputs, wordTimingsMs, missedMode, includeSlow],
   );
 
-  const canStart = practiceWords.length > 0;
+  const previewWords = source === "test" ? testWords : allTime.words;
+  const canStart = previewWords.length > 0;
 
   function handleStart() {
     if (!canStart) return;
-    // Repeat the set a few times so there's enough text for a real session
-    const repeated = Array.from({ length: Math.max(1, Math.ceil(20 / practiceWords.length)) })
-      .flatMap(() => [...practiceWords])
-      .slice(0, Math.max(practiceWords.length * 3, 20));
+    let words: string[];
+    if (source === "all-time") {
+      words = buildHistoryPracticeWords();
+    } else {
+      // Repeat the set a few times so there's enough text for a real session
+      words = Array.from({ length: Math.max(1, Math.ceil(20 / testWords.length)) })
+        .flatMap(() => [...testWords])
+        .slice(0, Math.max(testWords.length * 3, 20));
+    }
+    if (words.length === 0) return;
     setOpen(false);
-    onPractice(repeated);
+    onPractice(words);
+  }
+
+  function handleReset() {
+    clearMistakes();
+    setDictVersion((v) => v + 1);
   }
 
   return (
@@ -550,61 +582,109 @@ function PracticeWordsModal({
 
         <div className="flex flex-col gap-5 py-1">
 
-          {/* Missed section */}
+          {/* Source toggle */}
           <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-widest text-primary">✕ missed</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Include missed words or biwords (which include the previous word).
-            </p>
-            <SegmentedControl<MissedMode>
+            <span className="text-[10px] uppercase tracking-widest text-primary">source</span>
+            <SegmentedControl<"test" | "all-time">
               options={[
-                { value: "off", label: "off" },
-                { value: "words", label: "words" },
-                { value: "biwords", label: "biwords" },
+                { value: "test", label: "this test" },
+                { value: "all-time", label: "all-time" },
               ]}
-              value={missedMode}
-              onChange={setMissedMode}
+              value={source}
+              onChange={setSource}
             />
-            {!hasMissed && missedMode !== "off" && (
-              <p className="text-[10px] text-muted-foreground/50 italic">
-                No missed words in this test.
-              </p>
-            )}
           </div>
 
-          {/* Slow section */}
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-widest text-primary">◎ slow</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Include words you typed slower than others (top 25% slowest).
-            </p>
-            <SegmentedControl<"off" | "on">
-              options={[
-                { value: "off", label: "off" },
-                { value: "on", label: "on" },
-              ]}
-              value={includeSlow ? "on" : "off"}
-              onChange={(v) => setIncludeSlow(v === "on")}
-            />
-            {!hasSlow && includeSlow && (
-              <p className="text-[10px] text-muted-foreground/50 italic">
-                Not enough timing data for this test.
+          {source === "test" ? (
+            <>
+              {/* Missed section */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-widest text-primary">✕ missed</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Include missed words or biwords (which include the previous word).
+                </p>
+                <SegmentedControl<MissedMode>
+                  options={[
+                    { value: "off", label: "off" },
+                    { value: "words", label: "words" },
+                    { value: "biwords", label: "biwords" },
+                  ]}
+                  value={missedMode}
+                  onChange={setMissedMode}
+                />
+                {!hasMissed && missedMode !== "off" && (
+                  <p className="text-[10px] text-muted-foreground/50 italic">
+                    No missed words in this test.
+                  </p>
+                )}
+              </div>
+
+              {/* Slow section */}
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-widest text-primary">◎ slow</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Include words you typed slower than others (top 25% slowest).
+                </p>
+                <SegmentedControl<"off" | "on">
+                  options={[
+                    { value: "off", label: "off" },
+                    { value: "on", label: "on" },
+                  ]}
+                  value={includeSlow ? "on" : "off"}
+                  onChange={(v) => setIncludeSlow(v === "on")}
+                />
+                {!hasSlow && includeSlow && (
+                  <p className="text-[10px] text-muted-foreground/50 italic">
+                    Not enough timing data for this test.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Your most-missed and slowest words across every test. Words drop off
+                once you type them cleanly a few times in a row.
               </p>
-            )}
-          </div>
+              <div className="flex items-center gap-4 rounded-md border border-border/50 bg-muted/30 px-3 py-2">
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold text-foreground tabular-nums">{allTime.mastery}%</span>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50">mastery</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold text-foreground tabular-nums">{allTime.count}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50">tracked words</span>
+                </div>
+                {hasHistory && (
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground/60 transition-colors hover:text-destructive focus-visible:outline-none"
+                  >
+                    reset
+                  </button>
+                )}
+              </div>
+              {!hasHistory && (
+                <p className="text-[10px] text-muted-foreground/50 italic">
+                  No tracked mistakes yet — finish a few tests first.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Preview */}
           {canStart && (
             <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2">
               <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                {practiceWords.length} word{practiceWords.length !== 1 ? "s" : ""} selected
+                {previewWords.length} word{previewWords.length !== 1 ? "s" : ""} selected
               </p>
               <p className="font-mono text-xs text-muted-foreground line-clamp-2">
-                {practiceWords.join(" · ")}
+                {previewWords.join(" · ")}
               </p>
             </div>
           )}

@@ -18,6 +18,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ChartContainer,
   ChartTooltip,
   type ChartConfig,
@@ -179,14 +190,29 @@ export function PracticeDashboard({
                 <IconTargetArrow size={15} stroke={1.5} />
                 Practice these words
               </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-md border border-border/60 px-3 py-2.5 text-xs text-muted-foreground/60 transition-colors hover:border-destructive/50 hover:text-destructive focus-visible:outline-none"
-              >
-                <IconTrash size={14} stroke={1.5} />
-                Reset
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 rounded-md border border-border/60 px-3 py-2.5 text-xs text-muted-foreground/60 transition-colors hover:border-destructive/50 hover:text-destructive focus-visible:outline-none"
+                  >
+                    <IconTrash size={14} stroke={1.5} />
+                    Reset
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset practice data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete all tracked mistakes and mastery history. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         )}
